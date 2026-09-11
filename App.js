@@ -11,6 +11,7 @@ import {
   Alert,
   StatusBar,
   Dimensions,
+  Platform,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -334,8 +335,23 @@ function formatNum(n) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f7f8fb" },
-  header: { height: 70, paddingHorizontal: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "white", borderBottomWidth: 1, borderBottomColor: "#eceef2" },
+  safe: {
+  flex: 1,
+  backgroundColor: "#f7f8fb",
+  paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+},
+  header: {
+  minHeight: 78,
+  paddingHorizontal: 18,
+  paddingTop: 6,
+  paddingBottom: 10,
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  backgroundColor: "white",
+  borderBottomWidth: 1,
+  borderBottomColor: "#eceef2",
+},
   logo: { fontSize: 26, fontWeight: "900", letterSpacing: -0.8 },
   tagline: { fontSize: 11, color: "#737780", marginTop: 1 },
   headerRight: { flexDirection: "row", gap: 10, alignItems: "center" },
@@ -370,7 +386,17 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", justifyContent: "space-between", marginTop: 12, borderTopWidth: 1, borderTopColor: "#f0f1f4", paddingTop: 10 },
   actionBtn: { paddingVertical: 6 },
   actionText: { fontWeight: "700", fontSize: 12 },
-  nav: { height: 72, backgroundColor: "#fff", flexDirection: "row", justifyContent: "space-around", alignItems: "center", borderTopWidth: 1, borderTopColor: "#e7e9ee", paddingBottom: 4 },
+  nav: {
+  minHeight: 82,
+  backgroundColor: "#fff",
+  flexDirection: "row",
+  justifyContent: "space-around",
+  alignItems: "center",
+  borderTopWidth: 1,
+  borderTopColor: "#e7e9ee",
+  paddingTop: 6,
+  paddingBottom: Platform.OS === "android" ? 18 : 8,
+},
   navItem: { alignItems: "center", minWidth: 58 },
   navIconWrap: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   navIconActive: { backgroundColor: "#111" },
