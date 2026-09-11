@@ -1,4 +1,4 @@
-import React,{useMemo,useState}from"react";
+import React,{useState}from"react";
 import{SafeAreaView,View,Text,StyleSheet,Pressable,ScrollView,TextInput,Alert,StatusBar,Dimensions,Platform}from"react-native";
 const{width}=Dimensions.get("window");
 
@@ -45,13 +45,33 @@ export default function App(){
   <Pressable style={s.primary} onPress={()=>name.trim()&&username.trim()?setStage("app"):Alert.alert("Enter name and username")}><Text style={s.primaryText}>Start Earnzo</Text></Pressable>
  </ScrollView></SafeAreaView>;
 
- const content=useMemo(()=>{
-  if(tab==="Home")return <Home posts={posts} setPosts={setPosts}/>;
-  if(tab==="Shorts")return <Shorts posts={posts} setPosts={setPosts}/>;
-  if(tab==="Create")return <Create caption={caption} setCaption={setCaption} created={created} setCreated={setCreated}/>;
-  if(tab==="Earn")return <Earn wallet={wallet}/>;
-  return <Profile name={name} username={username} wallet={wallet} created={created} onLogout={()=>{setStage("login");setOtp("");setTab("Home")}}/>;
- },[tab,posts,caption,created,name,username,wallet]);
+  let content;
+if(tab==="Home"){
+  content=<Home posts={posts} setPosts={setPosts}/>;
+}else if(tab==="Shorts"){
+  content=<Shorts posts={posts} setPosts={setPosts}/>;
+}else if(tab==="Create"){
+  content=<Create
+    caption={caption}
+    setCaption={setCaption}
+    created={created}
+    setCreated={setCreated}
+  />;
+}else if(tab==="Earn"){
+  content=<Earn wallet={wallet}/>;
+}else{
+  content=<Profile
+    name={name}
+    username={username}
+    wallet={wallet}
+    created={created}
+    onLogout={()=>{
+      setStage("login");
+      setOtp("");
+      setTab("Home");
+    }}
+  />;
+}
 
  return <SafeAreaView style={s.safe}><StatusBar barStyle="dark-content" backgroundColor="#fff"/>
   <View style={s.header}><View><Text style={s.logo}>Earnzo</Text><Text style={s.tag}>Create • Connect • Earn</Text></View><View style={s.headerR}><Text style={s.coin}>₹{wallet}</Text><Pressable style={s.avatar} onPress={()=>setTab("Profile")}><Text style={s.avatarText}>{(name||"S")[0].toUpperCase()}</Text></Pressable></View></View>
