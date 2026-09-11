@@ -57,6 +57,9 @@ const tasks = [
 
 export default function App() {
   const [tab, setTab] = useState("Home");
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [mobile, setMobile] = useState("");
+  const [name, setName] = useState("");
   const [posts, setPosts] = useState(initialPosts);
   const [wallet, setWallet] = useState(1240);
   const [caption, setCaption] = useState("");
@@ -70,6 +73,49 @@ export default function App() {
     return <Profile created={created} wallet={wallet} />;
   }, [tab, posts, wallet, caption, created]);
 
+  if (!loggedIn) {
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+
+      <View style={styles.loginScreen}>
+        <Text style={styles.loginLogo}>Earnzo</Text>
+        <Text style={styles.loginTagline}>Create • Connect • Earn</Text>
+
+        <Text style={styles.loginTitle}>Welcome to Earnzo</Text>
+        <Text style={styles.loginSub}>
+          Enter your mobile number to continue
+        </Text>
+
+        <TextInput
+          style={styles.loginInput}
+          placeholder="Mobile Number"
+          keyboardType="phone-pad"
+          value={mobile}
+          onChangeText={setMobile}
+          maxLength={10}
+        />
+
+        <Pressable
+          style={styles.loginButton}
+          onPress={() => {
+            if (mobile.length === 10) {
+              setLoggedIn(true);
+            } else {
+              Alert.alert("Enter valid mobile number");
+            }
+          }}
+        >
+          <Text style={styles.loginButtonText}>Continue</Text>
+        </Pressable>
+
+        <Text style={styles.loginTerms}>
+          By continuing, you agree to Earnzo Terms & Privacy Policy.
+        </Text>
+      </View>
+    </SafeAreaView>
+  );
+}
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" />
@@ -335,6 +381,70 @@ function formatNum(n) {
 }
 
 const styles = StyleSheet.create({
+  loginScreen: {
+  flex: 1,
+  paddingHorizontal: 28,
+  justifyContent: "center",
+  backgroundColor: "#ffffff",
+},
+
+loginLogo: {
+  fontSize: 44,
+  fontWeight: "900",
+  textAlign: "center",
+},
+
+loginTagline: {
+  fontSize: 15,
+  color: "#777",
+  textAlign: "center",
+  marginTop: 5,
+  marginBottom: 50,
+},
+
+loginTitle: {
+  fontSize: 27,
+  fontWeight: "900",
+},
+
+loginSub: {
+  fontSize: 15,
+  color: "#777",
+  marginTop: 8,
+  marginBottom: 20,
+},
+
+loginInput: {
+  height: 56,
+  borderWidth: 1,
+  borderColor: "#dddddd",
+  borderRadius: 14,
+  paddingHorizontal: 16,
+  fontSize: 18,
+  backgroundColor: "#f7f8fb",
+},
+
+loginButton: {
+  height: 56,
+  backgroundColor: "#111111",
+  borderRadius: 14,
+  alignItems: "center",
+  justifyContent: "center",
+  marginTop: 15,
+},
+
+loginButtonText: {
+  color: "#ffffff",
+  fontSize: 17,
+  fontWeight: "900",
+},
+
+loginTerms: {
+  color: "#999999",
+  fontSize: 11,
+  textAlign: "center",
+  marginTop: 20,
+},
   safe: {
   flex: 1,
   backgroundColor: "#f7f8fb",
