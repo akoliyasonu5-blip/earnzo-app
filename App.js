@@ -17,7 +17,7 @@ import {
 } from "react-native";
 
 import * as ImagePicker from "expo-image-picker";
-
+import { useVideoPlayer, VideoView } from "expo-video";
 const demoPosts = [
   {
     id: "1",
@@ -847,42 +847,61 @@ function Home({
 
           </View>
 
-          <View style={styles.videoBox}>
+<PostMedia post={post} />
+                function PostMedia({ post }) {
 
-            {post.mediaType ===
-              "photo" &&
-            post.mediaUri ? (
+  if (
+    post.mediaType === "photo" &&
+    post.mediaUri
+  ) {
+    return (
+      <View style={styles.videoBox}>
+        <Image
+          source={{ uri: post.mediaUri }}
+          style={{
+            width: "100%",
+            height: "100%",
+          }}
+        />
+      </View>
+    );
+  }
 
-              <Image
-                source={{
-                  uri: post.mediaUri,
-                }}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                }}
-              />
+  if (
+    (post.mediaType === "short" ||
+      post.mediaType === "long") &&
+    post.mediaUri
+  ) {
 
-            ) : (
+    const player =
+      useVideoPlayer(
+        post.mediaUri,
+        (player) => {
+          player.loop = false;
+        }
+      );
 
-              <>
-                <Text
-                  style={{
-                    fontSize: 40,
-                  }}
-                >
-                  ▶
-                </Text>
+    return (
+      <VideoView
+        style={styles.videoPlayer}
+        player={player}
+        nativeControls
+        contentFit="contain"
+      />
+    );
+  }
 
-                <Text style={styles.gray}>
-                  {post.mediaType ||
-                    "Video"}
-                </Text>
-              </>
-
-            )}
-
-          </View>
+  return (
+    <View style={styles.videoBox}>
+      <Text style={{ fontSize: 40 }}>
+        ▶
+      </Text>
+      <Text style={styles.gray}>
+        Demo Video
+      </Text>
+    </View>
+  );
+}
 
           <Text style={styles.postTitle}>
             {post.title}
