@@ -31,14 +31,16 @@ jobs:
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
-      - name: Build APK
+      - name: Build Release APK
+        env:
+          NODE_ENV: production
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Earnzo-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Earnzo-Release-APK
+          path: android/app/build/outputs/apk/release/app-release.apk
