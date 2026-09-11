@@ -18,7 +18,7 @@ import {
 
 import * as ImagePicker from "expo-image-picker";
 import { useVideoPlayer, VideoView } from "expo-video";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const COLORS = {
   bg: "#F6F7FB",
   white: "#FFFFFF",
@@ -82,6 +82,7 @@ export default function App() {
   const [otp, setOtp] = useState("");
 
   const [name, setName] = useState("");
+  const [profilePhoto, setProfilePhoto] = useState("");
   const [username, setUsername] = useState("");
 
   const [tab, setTab] = useState("Home");
@@ -99,7 +100,51 @@ export default function App() {
   const [editUsername, setEditUsername] = useState("");
 
   const wallet = 1240;
+useEffect(() => {
+  const loadSavedData = async () => {
+    try {
+      const savedData = await AsyncStorage.getItem("earnzoData");
 
+      if (savedData) {
+        const data = JSON.parse(savedData);
+
+        if (data.name) setName(data.name);
+        if (data.username) setUsername(data.username);
+        if (data.profilePhoto) setProfilePhoto(data.profilePhoto);
+        if (data.posts) setPosts(data.posts);
+        if (data.createdPosts) setCreatedPosts(data.createdPosts);
+        if (data.stage) setStage(data.stage);
+      }
+    } catch (error) {
+      console.log("Data load error:", error);
+    }
+  };
+
+  loadSavedData();
+}, []);
+  useEffect(() => {
+  const saveData = async () => {
+    try {
+      const data = {
+        name,
+        username,
+        profilePhoto,
+        posts,
+        createdPosts,
+        stage,
+      };
+
+      await AsyncStorage.setItem(
+        "earnzoData",
+        JSON.stringify(data)
+      );
+    } catch (error) {
+      console.log("Data save error:", error);
+    }
+  };
+
+  saveData();
+}, [name, username, profilePhoto, posts, createdPosts, stage]);
   if (stage === "login") {
     return (
       <AuthScreen
@@ -238,19 +283,30 @@ export default function App() {
     screen = (
       <ProfileScreen
         name={name}
+        profilePhoto={profilePhoto}
+        setProfilePhoto={setProfilePhoto}
         username={username}
         wallet={wallet}
         createdPosts={createdPosts}
+        setPosts={setPosts}
+        setCreatedPosts={setCreatedPosts}
         onEdit={() => {
           setEditName(name);
           setEditUsername(username);
           setEditProfile(true);
         }}
-        onLogout={() => {
-          setStage("login");
-          setTab("Home");
-          setOtp("");
-        }}
+        onLogout={async () => {
+  await AsyncStorage.removeItem("earnzoData");
+
+  setName("");
+  setUsername("");
+  setMobile("");
+  setOtp("");
+  setPosts(demoPosts);
+  setCreatedPosts([]);
+  setTab("Home");
+  setStage("login");
+}}
       />
     );
   }
@@ -2071,12 +2127,40 @@ function EarnScreen({ wallet }) {
 
 function ProfileScreen({
   name,
+  profilePhoto,
+  setProfilePhoto,
   username,
   wallet,
   createdPosts,
+  setPosts,
+  setCreatedPosts,
   onEdit,
   onLogout,
 }) {
+  const changeProfilePhoto = async () => {
+  const permission =
+    await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (!permission.granted) {
+    Alert.alert(
+      "Permission Required",
+      "Please allow photo access."
+    );
+    return;
+  }
+
+  const result =
+    await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+
+  if (!result.canceled && result.assets?.[0]) {
+    setProfilePhoto(result.assets[0].uri);
+  }
+};
   return (
     <ScrollView
       contentContainerStyle={
@@ -2084,17 +2168,25 @@ function ProfileScreen({
       }
     >
       <View style={styles.profileHero}>
-        <View
-          style={styles.profileAvatar}
-        >
-          <Text
-            style={
-              styles.profileAvatarText
-            }
-          >
-            {(name || "S")[0].toUpperCase()}
-          </Text>
-        </View>
+        <Pressable
+  style={styles.profileAvatar}
+  onPress={changeProfilePhoto}
+>
+  {profilePhoto ? (
+    <Image
+      source={{ uri: profilePhoto }}
+      style={{
+        width: "100%",
+        height: "100%",
+        borderRadius: 30,
+      }}
+    />
+  ) : (
+    <Text style={styles.profileAvatarText}>
+      {(name || "S")[0].toUpperCase()}
+    </Text>
+  )}
+</Pressable>
 
         <Text
           style={styles.profileName}
@@ -2208,6 +2300,69 @@ function ProfileScreen({
               >
                 {post.title}
               </Text>
+                  <View
+  style={{
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 8,
+  }}
+>
+ <Pressable
+  onPress={() => {
+    setEditPost(post);
+    setEditCaption(post.title);
+  }}
+>
+  <Text
+    style={{
+      color: COLORS.blue,
+      fontWeight: "900",
+    }}
+  >
+    Edit
+  </Text>
+</Pressable>
+  <Pressable
+    onPress={() =>
+      Alert.alert(
+        "Delete Post",
+        "Are you sure you want to delete this post?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => {
+              setCreatedPosts((oldPosts) =>
+                oldPosts.filter(
+                  (item) => item.id !== post.id
+                )
+              );
+
+              setPosts((oldPosts) =>
+                oldPosts.filter(
+                  (item) => item.id !== post.id
+                )
+              );
+            },
+          },
+        ]
+      )
+    }
+  >
+    <Text
+      style={{
+        color: "#D94467",
+        fontWeight: "900",
+      }}
+    >
+      Delete
+    </Text>
+  </Pressable>
+</View>
 
               <Text
                 style={
