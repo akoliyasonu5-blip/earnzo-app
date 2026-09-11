@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   actionBtn: { paddingVertical: 6 },
   actionText: { fontWeight: "700", fontSize: 12 },
   nav: {
-  minHeight: 82,
+  minHeight: 94,
   backgroundColor: "#fff",
   flexDirection: "row",
   justifyContent: "space-around",
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   borderTopWidth: 1,
   borderTopColor: "#e7e9ee",
   paddingTop: 6,
-  paddingBottom: Platform.OS === "android" ? 18 : 8,
+  paddingBottom: Platform.OS === "android" ? 32 : 8,
 },
   navItem: { alignItems: "center", minWidth: 58 },
   navIconWrap: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
