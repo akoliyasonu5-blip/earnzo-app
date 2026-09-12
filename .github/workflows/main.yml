@@ -51,6 +51,9 @@ jobs:
       - name: Apply backend foundation
         run: node scripts/patch-backend-foundation.js
 
+      - name: Apply cloud feed sync
+        run: node scripts/patch-cloud-feed-sync.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
