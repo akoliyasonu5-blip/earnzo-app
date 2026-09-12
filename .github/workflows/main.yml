@@ -81,6 +81,9 @@ jobs:
       - name: Apply global language and region
         run: node scripts/patch-global-language-region.js
 
+      - name: Apply creator stats and valid views
+        run: node scripts/patch-creator-stats-views.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
