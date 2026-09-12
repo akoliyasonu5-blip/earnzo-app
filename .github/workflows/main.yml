@@ -31,6 +31,9 @@ jobs:
       - name: Apply Home feed fixes
         run: node scripts/patch-home-feed.js
 
+      - name: Apply editor upgrades
+        run: node scripts/patch-editor.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
