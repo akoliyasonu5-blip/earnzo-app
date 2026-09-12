@@ -60,6 +60,9 @@ jobs:
       - name: Apply cloud search and profile sync
         run: node scripts/patch-search-profiles.js
 
+      - name: Apply photo and story fixes
+        run: node scripts/patch-photo-story-fixes.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
