@@ -69,6 +69,9 @@ jobs:
       - name: Apply creator profiles
         run: node scripts/patch-creator-profile.js
 
+      - name: Apply saved content
+        run: node scripts/patch-saved-content.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
