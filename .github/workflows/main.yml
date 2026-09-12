@@ -57,6 +57,9 @@ jobs:
       - name: Apply social cloud sync
         run: node scripts/patch-social-cloud-sync.js
 
+      - name: Apply cloud search and profile sync
+        run: node scripts/patch-search-profiles.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
