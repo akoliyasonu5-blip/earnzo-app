@@ -90,6 +90,9 @@ jobs:
       - name: Apply detailed notification center
         run: node scripts/patch-notification-center.js
 
+      - name: Apply creator wallet and payout flow
+        run: node scripts/patch-wallet-payout-flow.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
