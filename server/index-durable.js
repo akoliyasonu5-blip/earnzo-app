@@ -67,7 +67,7 @@ app.get('/health', async (_req, res) => {
     res.json({
       ok: true,
       service: 'earnzo-backend',
-      version: '0.8.0',
+      version: '0.8.1',
       database: data.body?.database || 'supabase-postgres',
       mediaStorage: signedStorageEnabled() ? 'supabase-storage' : 'not-configured',
       monetizationService: MONETIZATION_URL ? 'configured' : 'not-configured',
@@ -93,9 +93,9 @@ app.get('/v1/feed', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-app.get('/v1/stories', async (_req, res, next) => {
+app.get('/v1/stories', async (req, res, next) => {
   try {
-    const out = await callData('stories', {});
+    const out = await callData('stories', { userId: String(req.query.userId || '') });
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
@@ -209,6 +209,34 @@ app.post('/v1/follow', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+app.get('/v1/blocks', async (req, res, next) => {
+  try {
+    const out = await callData('blocks_list', { userId: String(req.query.userId || '') });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.post('/v1/blocks/toggle', async (req, res, next) => {
+  try {
+    const blockerId = String(req.body?.blockerId || '').trim();
+    const blockedId = String(req.body?.blockedId || '').trim();
+    if (!blockerId || !blockedId) return res.status(400).json({ error: 'blockerId and blockedId required' });
+    const out = await callData('toggle_block', { blockerId, blockedId });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.post('/v1/reports', async (req, res, next) => {
+  try {
+    const body = req.body || {};
+    if (!String(body.reporterId || '').trim() || !String(body.targetType || '').trim() || !String(body.targetId || '').trim() || !String(body.reason || '').trim()) {
+      return res.status(400).json({ error: 'reporterId, targetType, targetId and reason required' });
+    }
+    const out = await callData('report_create', body);
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
 app.get('/v1/notifications', async (req, res, next) => {
   try {
     const out = await callData('notifications', { userId: String(req.query.userId || '') });
@@ -225,7 +253,7 @@ app.post('/v1/notifications/read', async (req, res, next) => {
 
 app.get('/v1/search', async (req, res, next) => {
   try {
-    const out = await callData('search', { q: String(req.query.q || '') });
+    const out = await callData('search', { q: String(req.query.q || ''), userId: String(req.query.userId || '') });
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
