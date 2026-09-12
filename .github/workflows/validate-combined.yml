@@ -51,6 +51,7 @@ jobs:
           node scripts/patch-notification-center.js
           node scripts/patch-wallet-payout-flow.js
           node scripts/patch-creator-drafts.js
+          node scripts/patch-moderation-safety.js
 
       - name: Confirm final patch markers
         run: |
@@ -62,4 +63,5 @@ jobs:
           grep -q "Earnzo notification center active" App.js
           grep -q "Earnzo wallet payout flow active" App.js
           grep -q "Earnzo creator drafts active" App.js
+          grep -q "Earnzo moderation safety active" App.js
           echo "Combined patch validation passed"
