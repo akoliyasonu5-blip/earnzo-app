@@ -87,6 +87,9 @@ jobs:
       - name: Apply monetization application flow
         run: node scripts/patch-monetization-application.js
 
+      - name: Apply detailed notification center
+        run: node scripts/patch-notification-center.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
