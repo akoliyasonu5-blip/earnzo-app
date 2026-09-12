@@ -16,6 +16,7 @@ const ROOT = __dirname;
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(ROOT, 'uploads');
 const API_KEY = process.env.EARNZO_API_KEY || '';
 const DATA_URL = (process.env.SUPABASE_DATA_FUNCTION_URL || '').trim();
+const MONETIZATION_URL = (process.env.SUPABASE_MONETIZATION_FUNCTION_URL || (DATA_URL ? DATA_URL.replace(/earnzo-data\/?$/, 'earnzo-monetization') : '')).trim();
 const ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -34,9 +35,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 250 * 1024 * 1024 } });
 
-async function callData(action, payload = {}) {
-  if (!DATA_URL || !ANON_KEY) throw new Error('Durable database is not configured');
-  const response = await fetch(DATA_URL, {
+async function callFunction(url, action, payload = {}) {
+  if (!url || !ANON_KEY) throw new Error('Durable database is not configured');
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -57,15 +58,19 @@ async function callData(action, payload = {}) {
   return { status: response.status, body };
 }
 
+const callData = (action, payload = {}) => callFunction(DATA_URL, action, payload);
+const callMonetization = (action, payload = {}) => callFunction(MONETIZATION_URL, action, payload);
+
 app.get('/health', async (_req, res) => {
   try {
     const data = await callData('health');
     res.json({
       ok: true,
       service: 'earnzo-backend',
-      version: '0.7.0',
+      version: '0.7.1',
       database: data.body?.database || 'supabase-postgres',
       mediaStorage: signedStorageEnabled() ? 'supabase-storage' : 'not-configured',
+      monetizationService: MONETIZATION_URL ? 'configured' : 'not-configured',
     });
   } catch (e) {
     res.status(503).json({ ok: false, error: e?.message || 'Backend unavailable' });
@@ -106,7 +111,7 @@ app.get('/v1/monetization/status', async (req, res, next) => {
   try {
     const creatorId = String(req.query.creatorId || '').trim();
     if (!creatorId) return res.status(400).json({ error: 'creatorId required' });
-    const out = await callData('monetization_status', { creatorId });
+    const out = await callMonetization('status', { creatorId });
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
@@ -115,7 +120,7 @@ app.post('/v1/monetization/apply', async (req, res, next) => {
   try {
     const creatorId = String(req.body?.creatorId || '').trim();
     if (!creatorId) return res.status(400).json({ error: 'creatorId required' });
-    const out = await callData('monetization_apply', req.body || {});
+    const out = await callMonetization('apply', req.body || {});
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
