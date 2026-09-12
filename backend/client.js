@@ -53,8 +53,9 @@ export async function fetchFeed(userId = "") {
   return request(`/v1/feed${q}`);
 }
 
-export async function fetchStories() {
-  return request("/v1/stories");
+export async function fetchStories(userId = "") {
+  const q = userId ? `?userId=${encodeURIComponent(userId)}` : "";
+  return request(`/v1/stories${q}`);
 }
 
 function mediaPart(uri, kind = "video") {
@@ -185,8 +186,31 @@ export async function followRemoteUser(followerId, followingId) {
   });
 }
 
-export async function searchRemote(query) {
-  return request(`/v1/search?q=${encodeURIComponent(query || "")}`);
+export async function searchRemote(query, userId = "") {
+  const params = new URLSearchParams();
+  params.set("q", query || "");
+  if (userId) params.set("userId", userId);
+  return request(`/v1/search?${params.toString()}`);
+}
+
+export async function fetchBlockedCreators(userId) {
+  return request(`/v1/blocks?userId=${encodeURIComponent(userId || "")}`);
+}
+
+export async function toggleRemoteBlock(blockerId, blockedId) {
+  return request("/v1/blocks/toggle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ blockerId, blockedId }),
+  });
+}
+
+export async function submitRemoteReport(payload) {
+  return request("/v1/reports", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
+  });
 }
 
 export async function fetchNotifications(userId) {
