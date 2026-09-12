@@ -22,13 +22,13 @@ replaceOnce(
 replaceOnce(
   'publish cloud sync',
   'setPosts((old) => [post, ...old]); setCreatedPosts((old) => [post, ...old]); setUploading(false);',
-  'let publishedPost = post; let cloudSynced = false; if (backendEnabled) { try { const remotePost = await syncPostToBackend(post, media.uri, cover?.uri || ""); if (remotePost) { publishedPost = { ...post, ...remotePost, localId: post.id }; cloudSynced = true; } } catch (e) { console.log("Earnzo cloud sync failed; keeping local post", e?.message || e); } } setPosts((old) => [publishedPost, ...old]); setCreatedPosts((old) => [publishedPost, ...old]); setUploading(false);'
+  'let publishedPost = post; let cloudSynced = false; let cloudError = ""; if (backendEnabled) { try { const remotePost = await syncPostToBackend(post, media.uri, cover?.uri || ""); if (remotePost) { publishedPost = { ...post, ...remotePost, localId: post.id }; cloudSynced = true; } } catch (e) { cloudError = String(e?.message || e || "Cloud upload failed"); console.log("Earnzo cloud sync failed; keeping local post", cloudError); } } setPosts((old) => [publishedPost, ...old]); setCreatedPosts((old) => [publishedPost, ...old]); setUploading(false);'
 );
 
 replaceOnce(
   'publish status alert',
   'Alert.alert("Published ✅", type === "short" ? "Short upload ho gaya" : "Post upload ho gaya",',
-  'Alert.alert(cloudSynced ? "Published to Cloud ✅" : backendEnabled ? "Saved locally ⚠️" : "Published locally ✅", type === "short" ? (cloudSynced ? "Short cloud par upload ho gaya" : "Short device par save ho gaya") : (cloudSynced ? "Post cloud par upload ho gaya" : "Post device par save ho gaya"),'
+  'Alert.alert(cloudSynced ? "Published to Cloud ✅" : backendEnabled ? "Saved locally ⚠️" : "Published locally ✅", type === "short" ? (cloudSynced ? "Short cloud par upload ho gaya" : `Short device par save ho gaya${cloudError ? `\\n\\nCloud: ${cloudError}` : ""}`) : (cloudSynced ? "Post cloud par upload ho gaya" : `Post device par save ho gaya${cloudError ? `\\n\\nCloud: ${cloudError}` : ""}`),'
 );
 
 const creatorToolsText = 'Audio • Trim • Effects • Filters • Text • Stickers • Cover • Caption • Tags • Location • Playlist • Story • Visibility • Brand label';
