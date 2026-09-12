@@ -1,13 +1,12 @@
 const fs = require('fs');
-const tus = require('tus-js-client');
 
 const SIGN_URL = (process.env.SUPABASE_SIGN_UPLOAD_URL || '').trim();
 const ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
-const PROJECT_REF = (process.env.SUPABASE_PROJECT_REF || '').trim();
 const BUCKET = (process.env.SUPABASE_STORAGE_BUCKET || 'earnzo-media').trim();
+const MAX_FILE_BYTES = Number(process.env.SUPABASE_MAX_FILE_BYTES || 50 * 1024 * 1024);
 
 function enabled() {
-  return Boolean(SIGN_URL && ANON_KEY && PROJECT_REF);
+  return Boolean(SIGN_URL && ANON_KEY);
 }
 
 async function getSignedUpload(file) {
@@ -26,41 +25,39 @@ async function getSignedUpload(file) {
   const text = await response.text();
   let body;
   try { body = text ? JSON.parse(text) : {}; } catch { body = {}; }
-  if (!response.ok || !body?.token || !body?.path) {
+  if (!response.ok || !body?.signedUrl || !body?.path) {
     throw new Error(body?.error || `Storage signer failed (${response.status})`);
   }
   return body;
 }
 
-function tusUpload(file, signed) {
-  return new Promise((resolve, reject) => {
-    const upload = new tus.Upload(fs.createReadStream(file.path), {
-      endpoint: `https://${PROJECT_REF}.storage.supabase.co/storage/v1/upload/resumable`,
-      retryDelays: [0, 3000, 5000, 10000, 20000],
-      headers: {
-        'x-signature': signed.token,
-        apikey: ANON_KEY,
-      },
-      uploadDataDuringCreation: true,
-      removeFingerprintOnSuccess: true,
-      chunkSize: 6 * 1024 * 1024,
-      metadata: {
-        bucketName: BUCKET,
-        objectName: signed.path,
-        contentType: file.mimetype || 'application/octet-stream',
-        cacheControl: '3600',
-      },
-      onError: reject,
-      onSuccess: () => resolve(signed.publicUrl),
-    });
-    upload.start();
+async function uploadToSignedUrl(file, signed) {
+  const response = await fetch(signed.signedUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.mimetype || 'application/octet-stream',
+      'Cache-Control': '3600',
+    },
+    body: fs.createReadStream(file.path),
+    duplex: 'half',
   });
+  const text = await response.text();
+  if (!response.ok) {
+    let body = null;
+    try { body = text ? JSON.parse(text) : null; } catch {}
+    throw new Error(body?.message || body?.error || `Supabase upload failed (${response.status})`);
+  }
+  return signed.publicUrl;
 }
 
 async function uploadViaSignedTus(file) {
   if (!enabled()) return null;
+  if (Number(file.size || 0) > MAX_FILE_BYTES) {
+    const mb = Math.ceil(Number(file.size || 0) / (1024 * 1024));
+    throw new Error(`Video ${mb} MB hai. Supabase Free plan me maximum 50 MB file upload ho sakti hai. Chhota/compressed video select karein.`);
+  }
   const signed = await getSignedUpload(file);
-  const publicUrl = await tusUpload(file, signed);
+  const publicUrl = await uploadToSignedUrl(file, signed);
   try { fs.unlinkSync(file.path); } catch {}
   return publicUrl;
 }
