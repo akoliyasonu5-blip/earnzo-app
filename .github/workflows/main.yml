@@ -78,6 +78,9 @@ jobs:
       - name: Apply priority experience
         run: node scripts/patch-priority-experience.js
 
+      - name: Apply global language and region
+        run: node scripts/patch-global-language-region.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
