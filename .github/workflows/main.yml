@@ -75,6 +75,9 @@ jobs:
       - name: Apply creator post management
         run: node scripts/patch-own-content-management.js
 
+      - name: Apply priority experience
+        run: node scripts/patch-priority-experience.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
