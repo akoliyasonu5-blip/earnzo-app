@@ -1,0 +1,54 @@
+name: Validate Combined Patches
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - combined-test-build
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check patch script syntax
+        run: |
+          for f in scripts/*.js; do
+            node --check "$f"
+          done
+
+      - name: Apply all build-time patches
+        run: |
+          node scripts/patch-home-feed.js
+          node scripts/patch-editor.js
+          node scripts/patch-trim-range.js
+          node scripts/patch-filters-effects.js
+          node scripts/patch-audio-controls.js
+          node scripts/patch-crop-framing.js
+          node scripts/patch-backend-foundation.js
+          node scripts/patch-cloud-feed-sync.js
+          node scripts/patch-social-cloud-sync.js
+          node scripts/patch-search-profiles.js
+          node scripts/patch-photo-story-fixes.js
+          node scripts/patch-pull-refresh.js
+          node scripts/patch-creator-profile.js
+          node scripts/patch-saved-content.js
+          node scripts/patch-own-content-management.js
+          node scripts/patch-priority-experience.js
+          node scripts/patch-global-language-region.js
+          node scripts/patch-creator-stats-views.js
+
+      - name: Confirm final patch markers
+        run: |
+          grep -q "Earnzo pull refresh active" App.js
+          grep -q "Earnzo priority experience active" App.js
+          grep -q "Earnzo global language region active" App.js
+          grep -q "Earnzo creator stats views active" App.js
+          echo "Combined patch validation passed"
