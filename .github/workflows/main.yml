@@ -93,6 +93,9 @@ jobs:
       - name: Apply creator wallet and payout flow
         run: node scripts/patch-wallet-payout-flow.js
 
+      - name: Apply creator drafts
+        run: node scripts/patch-creator-drafts.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
