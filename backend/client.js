@@ -45,8 +45,9 @@ export async function upsertProfile(profile) {
   });
 }
 
-export async function fetchFeed() {
-  return request("/v1/feed");
+export async function fetchFeed(userId = "") {
+  const q = userId ? `?userId=${encodeURIComponent(userId)}` : "";
+  return request(`/v1/feed${q}`);
 }
 
 function mediaPart(uri, kind = "video") {
