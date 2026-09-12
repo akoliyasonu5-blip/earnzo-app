@@ -31,11 +31,12 @@ replaceOnce(
   'Alert.alert(cloudSynced ? "Published to Cloud ✅" : backendEnabled ? "Saved locally ⚠️" : "Published locally ✅", type === "short" ? (cloudSynced ? "Short cloud par upload ho gaya" : "Short device par save ho gaya") : (cloudSynced ? "Post cloud par upload ho gaya" : "Post device par save ho gaya"),'
 );
 
-replaceOnce(
-  'creator tools text',
-  'Audio • Trim • Effects • Filters • Text • Stickers • Cover • Caption • Tags • Location • Playlist • Story • Visibility • Brand label',
-  'Audio • Trim • Effects • Filters • Text • Stickers • Cover • Caption • Tags • Location • Playlist • Story • Visibility • Brand label • Cloud upload ready'
-);
+const creatorToolsText = 'Audio • Trim • Effects • Filters • Text • Stickers • Cover • Caption • Tags • Location • Playlist • Story • Visibility • Brand label';
+if (code.includes(creatorToolsText)) {
+  code = code.replace(creatorToolsText, `${creatorToolsText} • Cloud upload ready`);
+} else {
+  console.log('Creator tools helper text not found; skipping optional label update.');
+}
 
 fs.writeFileSync(path, code, 'utf8');
 console.log('Earnzo backend foundation applied: cloud upload hook with safe local fallback.');
