@@ -37,6 +37,9 @@ jobs:
       - name: Apply trim upgrade
         run: node scripts/patch-trim-range.js
 
+      - name: Apply filters and effects upgrade
+        run: node scripts/patch-filters-effects.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
