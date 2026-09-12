@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      EXPO_PUBLIC_EARNZO_API_URL: ${{ vars.EXPO_PUBLIC_EARNZO_API_URL }}
+      EXPO_PUBLIC_EARNZO_API_URL: https://earnzo-backend.onrender.com
 
     steps:
       - name: Checkout code
