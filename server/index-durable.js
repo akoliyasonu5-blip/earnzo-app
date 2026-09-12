@@ -48,7 +48,12 @@ async function callData(action, payload = {}) {
   const text = await response.text();
   let body = null;
   try { body = text ? JSON.parse(text) : null; } catch { body = text; }
-  if (!response.ok) throw new Error(body?.error || `Durable database request failed (${response.status})`);
+  if (!response.ok) {
+    const err = new Error(body?.error || `Durable database request failed (${response.status})`);
+    err.status = response.status;
+    err.body = body;
+    throw err;
+  }
   return { status: response.status, body };
 }
 
@@ -58,7 +63,7 @@ app.get('/health', async (_req, res) => {
     res.json({
       ok: true,
       service: 'earnzo-backend',
-      version: '0.6.0',
+      version: '0.7.0',
       database: data.body?.database || 'supabase-postgres',
       mediaStorage: signedStorageEnabled() ? 'supabase-storage' : 'not-configured',
     });
@@ -93,6 +98,24 @@ app.get('/v1/stories', async (_req, res, next) => {
 app.get('/v1/creator-stats', async (req, res, next) => {
   try {
     const out = await callData('creator_stats', { creatorId: String(req.query.creatorId || '') });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.get('/v1/monetization/status', async (req, res, next) => {
+  try {
+    const creatorId = String(req.query.creatorId || '').trim();
+    if (!creatorId) return res.status(400).json({ error: 'creatorId required' });
+    const out = await callData('monetization_status', { creatorId });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.post('/v1/monetization/apply', async (req, res, next) => {
+  try {
+    const creatorId = String(req.body?.creatorId || '').trim();
+    if (!creatorId) return res.status(400).json({ error: 'creatorId required' });
+    const out = await callData('monetization_apply', req.body || {});
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
@@ -185,7 +208,8 @@ app.get('/v1/search', async (req, res, next) => {
 
 app.use((err, _req, res, _next) => {
   console.error('Earnzo backend error:', err);
-  res.status(500).json({ error: err?.message || 'Internal server error' });
+  const status = Number(err?.status || 500);
+  res.status(status >= 400 && status < 600 ? status : 500).json(err?.body || { error: err?.message || 'Internal server error' });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
