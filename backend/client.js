@@ -10,10 +10,10 @@ function headers(extra = {}) {
   };
 }
 
-async function request(path, options = {}) {
+async function request(path, options = {}, timeoutMs = 20000) {
   if (!backendEnabled) throw new Error("Earnzo backend is not configured");
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(`${API_URL}${path}`, {
       ...options,
@@ -63,7 +63,7 @@ export async function uploadMedia(uri, kind = "video") {
   return request("/v1/media", {
     method: "POST",
     body: form,
-  });
+  }, 300000);
 }
 
 export async function createPost(post) {
