@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      EXPO_PUBLIC_EARNZO_API_URL: ${{ vars.EXPO_PUBLIC_EARNZO_API_URL }}
 
     steps:
       - name: Checkout code
