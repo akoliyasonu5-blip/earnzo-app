@@ -99,6 +99,9 @@ jobs:
       - name: Apply moderation and safety
         run: node scripts/patch-moderation-safety.js
 
+      - name: Apply cloud messaging
+        run: node scripts/patch-cloud-messaging.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
