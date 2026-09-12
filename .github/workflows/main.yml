@@ -46,6 +46,9 @@ jobs:
       - name: Apply crop framing upgrade
         run: node scripts/patch-crop-framing.js
 
+      - name: Apply backend foundation
+        run: node scripts/patch-backend-foundation.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
