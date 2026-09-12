@@ -72,6 +72,9 @@ jobs:
       - name: Apply saved content
         run: node scripts/patch-saved-content.js
 
+      - name: Apply creator post management
+        run: node scripts/patch-own-content-management.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
