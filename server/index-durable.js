@@ -16,7 +16,7 @@ const ROOT = __dirname;
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(ROOT, 'uploads');
 const API_KEY = process.env.EARNZO_API_KEY || '';
 const DATA_URL = (process.env.SUPABASE_DATA_FUNCTION_URL || '').trim();
-const DATA_KEY = (process.env.SUPABASE_DATA_FUNCTION_KEY || '').trim();
+const ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 app.use((req, res, next) => {
@@ -35,12 +35,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage, limits: { fileSize: 250 * 1024 * 1024 } });
 
 async function callData(action, payload = {}) {
-  if (!DATA_URL || !DATA_KEY) throw new Error('Durable database is not configured');
+  if (!DATA_URL || !ANON_KEY) throw new Error('Durable database is not configured');
   const response = await fetch(DATA_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-earnzo-data-key': DATA_KEY,
+      Authorization: `Bearer ${ANON_KEY}`,
+      apikey: ANON_KEY,
     },
     body: JSON.stringify({ action, payload }),
   });
