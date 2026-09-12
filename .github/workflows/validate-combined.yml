@@ -47,6 +47,7 @@ jobs:
           node scripts/patch-priority-experience.js
           node scripts/patch-global-language-region.js
           node scripts/patch-creator-stats-views.js
+          node scripts/patch-monetization-application.js
 
       - name: Confirm final patch markers
         run: |
@@ -54,4 +55,5 @@ jobs:
           grep -q "Earnzo priority experience active" App.js
           grep -q "Earnzo global language region active" App.js
           grep -q "Earnzo creator stats views active" App.js
+          grep -q "Earnzo monetization application active" App.js
           echo "Combined patch validation passed"
