@@ -66,6 +66,9 @@ jobs:
       - name: Apply pull to refresh
         run: node scripts/patch-pull-refresh.js
 
+      - name: Apply creator profiles
+        run: node scripts/patch-creator-profile.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
