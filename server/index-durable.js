@@ -58,7 +58,7 @@ app.get('/health', async (_req, res) => {
     res.json({
       ok: true,
       service: 'earnzo-backend',
-      version: '0.3.0',
+      version: '0.3.1',
       database: data.body?.database || 'supabase-postgres',
       mediaStorage: signedStorageEnabled() ? 'supabase-storage' : 'not-configured',
     });
@@ -76,8 +76,11 @@ app.post('/v1/profiles/upsert', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-app.get('/v1/feed', async (_req, res, next) => {
-  try { const out = await callData('feed'); res.status(out.status).json(out.body); } catch (e) { next(e); }
+app.get('/v1/feed', async (req, res, next) => {
+  try {
+    const out = await callData('feed', { userId: String(req.query.userId || '') });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
 });
 
 app.post('/v1/media', upload.single('file'), async (req, res, next) => {
