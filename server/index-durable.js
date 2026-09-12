@@ -58,7 +58,7 @@ app.get('/health', async (_req, res) => {
     res.json({
       ok: true,
       service: 'earnzo-backend',
-      version: '0.5.0',
+      version: '0.6.0',
       database: data.body?.database || 'supabase-postgres',
       mediaStorage: signedStorageEnabled() ? 'supabase-storage' : 'not-configured',
     });
@@ -86,6 +86,13 @@ app.get('/v1/feed', async (req, res, next) => {
 app.get('/v1/stories', async (_req, res, next) => {
   try {
     const out = await callData('stories', {});
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.get('/v1/creator-stats', async (req, res, next) => {
+  try {
+    const out = await callData('creator_stats', { creatorId: String(req.query.creatorId || '') });
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
@@ -118,6 +125,13 @@ app.patch('/v1/posts/:id', async (req, res, next) => {
 app.delete('/v1/posts/:id', async (req, res, next) => {
   try {
     const out = await callData('delete_post', { postId: req.params.id });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.post('/v1/posts/:id/view', async (req, res, next) => {
+  try {
+    const out = await callData('record_view', { postId: req.params.id, userId: String(req.body?.userId || 'anonymous') });
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
