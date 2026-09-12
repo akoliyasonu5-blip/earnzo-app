@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Apply Home feed fixes
+        run: node scripts/patch-home-feed.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
