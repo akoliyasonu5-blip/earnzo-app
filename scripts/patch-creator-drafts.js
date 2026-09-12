@@ -104,11 +104,14 @@ replaceOnce(
   '</View><Pressable style={styles.secondary} onPress={() => setDraftsOpen(true)}><Text style={styles.secondaryText}>📝 Drafts ({drafts.length})</Text></Pressable><View style={styles.tipCard}><Text style={styles.bold}>Creator editing tools</Text>'
 );
 
-replaceOnce(
-  'draft modal mount on choose screen',
-  '</Text></View></ScrollView>;',
-  '</Text></View><DraftsModal visible={draftsOpen} close={() => setDraftsOpen(false)} drafts={drafts} onOpen={loadDraft} onDelete={deleteDraft} /></ScrollView>;'
-);
+const createStart = code.indexOf('function Create({');
+const createEnd = code.indexOf('\nfunction EditorPreview', createStart);
+if (createStart < 0 || createEnd < 0) throw new Error('Creator drafts patch failed: Create block not found');
+let createBlock = code.slice(createStart, createEnd);
+const lastScrollClose = createBlock.lastIndexOf('</ScrollView>;');
+if (lastScrollClose < 0) throw new Error('Creator drafts patch failed: Create choose screen close not found');
+createBlock = createBlock.slice(0, lastScrollClose) + '<DraftsModal visible={draftsOpen} close={() => setDraftsOpen(false)} drafts={drafts} onOpen={loadDraft} onDelete={deleteDraft} />' + createBlock.slice(lastScrollClose);
+code = code.slice(0, createStart) + createBlock + code.slice(createEnd);
 
 const anchor = 'function CreateCard({ icon, title, sub, onPress }) {';
 if (!code.includes(anchor)) throw new Error('Creator drafts patch failed: CreateCard anchor not found');
