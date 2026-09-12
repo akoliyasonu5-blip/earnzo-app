@@ -43,6 +43,9 @@ jobs:
       - name: Apply audio controls upgrade
         run: node scripts/patch-audio-controls.js
 
+      - name: Apply crop framing upgrade
+        run: node scripts/patch-crop-framing.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
