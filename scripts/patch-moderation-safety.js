@@ -55,9 +55,9 @@ replaceOnce(
         setStories((old) => old.filter((s) => String(s.handle || s.name || "").trim() !== creatorKey));
         setNotifications((old) => old.filter((n) => String(n.actorId || "").trim() !== creatorKey));
         setPublicCreator(null);
-        Alert.alert("Creator blocked", `${creatorKey} ka content, notifications aur profile suggestions hide honge.`);
+        Alert.alert("Creator blocked", creatorKey + " ka content, notifications aur profile suggestions hide honge.");
       } else {
-        Alert.alert("Creator unblocked", `${creatorKey} dobara feed/search me aa sakta hai.`);
+        Alert.alert("Creator unblocked", creatorKey + " dobara feed/search me aa sakta hai.");
         if (backendEnabled) { await syncCloudFeed(); await syncCloudExtras(); }
       }
     } catch (e) {
