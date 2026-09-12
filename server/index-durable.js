@@ -58,7 +58,7 @@ app.get('/health', async (_req, res) => {
     res.json({
       ok: true,
       service: 'earnzo-backend',
-      version: '0.3.1',
+      version: '0.4.0',
       database: data.body?.database || 'supabase-postgres',
       mediaStorage: signedStorageEnabled() ? 'supabase-storage' : 'not-configured',
     });
@@ -97,6 +97,20 @@ app.post('/v1/posts', async (req, res, next) => {
     const body = req.body || {};
     if (!body.title || !body.mediaType) return res.status(400).json({ error: 'title and mediaType required' });
     const out = await callData('create_post', body);
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.patch('/v1/posts/:id', async (req, res, next) => {
+  try {
+    const out = await callData('update_post', { postId: req.params.id, ...(req.body || {}) });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.delete('/v1/posts/:id', async (req, res, next) => {
+  try {
+    const out = await callData('delete_post', { postId: req.params.id });
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
