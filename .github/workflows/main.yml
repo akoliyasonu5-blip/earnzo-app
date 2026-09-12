@@ -96,6 +96,9 @@ jobs:
       - name: Apply creator drafts
         run: node scripts/patch-creator-drafts.js
 
+      - name: Apply moderation and safety
+        run: node scripts/patch-moderation-safety.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
