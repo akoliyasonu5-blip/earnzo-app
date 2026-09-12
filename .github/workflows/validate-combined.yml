@@ -49,6 +49,7 @@ jobs:
           node scripts/patch-creator-stats-views.js
           node scripts/patch-monetization-application.js
           node scripts/patch-notification-center.js
+          node scripts/patch-wallet-payout-flow.js
 
       - name: Confirm final patch markers
         run: |
@@ -58,4 +59,5 @@ jobs:
           grep -q "Earnzo creator stats views active" App.js
           grep -q "Earnzo monetization application active" App.js
           grep -q "Earnzo notification center active" App.js
+          grep -q "Earnzo wallet payout flow active" App.js
           echo "Combined patch validation passed"
