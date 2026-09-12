@@ -19,6 +19,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { useVideoPlayer, VideoView } from "expo-video";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 const COLORS = {
   bg: "#F6F7FB",
   white: "#FFFFFF",
@@ -77,246 +78,118 @@ const demoPosts = [
 
 export default function App() {
   const [stage, setStage] = useState("login");
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
 
   const [name, setName] = useState("");
-  const [profilePhoto, setProfilePhoto] = useState("");
-  const [dataLoaded, setDataLoaded] = useState(false);
   const [username, setUsername] = useState("");
+  const [profilePhoto, setProfilePhoto] = useState("");
 
   const [tab, setTab] = useState("Home");
-
   const [posts, setPosts] = useState(demoPosts);
   const [createdPosts, setCreatedPosts] = useState([]);
-
   const [filter, setFilter] = useState("For You");
 
   const [commentPost, setCommentPost] = useState(null);
   const [commentText, setCommentText] = useState("");
 
-  const [editProfile, setEditProfile] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [notificationOpen, setNotificationOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
+
+  const [notificationOpen, setNotificationOpen] =
+    useState(false);
+
+  const [editProfile, setEditProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editUsername, setEditUsername] = useState("");
 
   const wallet = 1240;
-useEffect(() => {
-  const loadSavedData = async () => {
-    try {
-      const savedData = await AsyncStorage.getItem("earnzoData");
 
-      if (savedData) {
-        const data = JSON.parse(savedData);
-
-        if (data.name) setName(data.name);
-        if (data.username) setUsername(data.username);
-        if (data.profilePhoto) setProfilePhoto(data.profilePhoto);
-        if (data.posts) setPosts(data.posts);
-        if (data.createdPosts) setCreatedPosts(data.createdPosts);
-        if (data.stage) setStage(data.stage);
-      }
-    } catch (error) {
-      console.log("Data load error:", error);
-    } finally {
-      setDataLoaded(true);
-    }
-  };
-
-  loadSavedData();
-}, []);
   useEffect(() => {
-    if (!dataLoaded) return;
-  const saveData = async () => {
-    try {
-      const data = {
-        name,
-        username,
-        profilePhoto,
-        posts,
-        createdPosts,
-        stage,
-      };
+    async function loadData() {
+      try {
+        const saved = await AsyncStorage.getItem(
+          "earnzoData"
+        );
 
-      await AsyncStorage.setItem(
-        "earnzoData",
-        JSON.stringify(data)
-      );
-    } catch (error) {
-      console.log("Data save error:", error);
+        if (saved) {
+          const data = JSON.parse(saved);
+
+          if (data.stage) {
+            setStage(data.stage);
+          }
+
+          if (data.name) {
+            setName(data.name);
+          }
+
+          if (data.username) {
+            setUsername(data.username);
+          }
+
+          if (data.profilePhoto) {
+            setProfilePhoto(data.profilePhoto);
+          }
+
+          if (Array.isArray(data.posts)) {
+            setPosts(data.posts);
+          }
+
+          if (Array.isArray(data.createdPosts)) {
+            setCreatedPosts(data.createdPosts);
+          }
+        }
+      } catch (error) {
+        console.log("Load error:", error);
+      } finally {
+        setDataLoaded(true);
+      }
     }
-  };
 
-  saveData();
-}, [dataLoaded, name, username, profilePhoto, posts, createdPosts, stage]);
-  if (stage === "login") {
-    return (
-      <AuthScreen
-        title="Welcome to Earnzo"
-        subtitle="Enter your mobile number"
-        value={mobile}
-        setValue={setMobile}
-        placeholder="Mobile Number"
-        keyboardType="phone-pad"
-        buttonText="Continue"
-        note="Testing OTP: 1234"
-        onPress={() => {
-          if (mobile.length === 10) {
-            setStage("otp");
-          } else {
-            Alert.alert("Please enter a valid 10-digit mobile number");
-          }
-        }}
-      />
-    );
-  }
+    loadData();
+  }, []);
 
-  if (stage === "otp") {
-    return (
-      <AuthScreen
-        title="Verify OTP"
-        subtitle={`OTP sent to +91 ${mobile}`}
-        value={otp}
-        setValue={setOtp}
-        placeholder="4-digit OTP"
-        keyboardType="number-pad"
-        buttonText="Verify OTP"
-        onPress={() => {
-          if (otp === "1234") {
-            setStage("profile");
-          } else {
-            Alert.alert("Wrong OTP", "Testing OTP is 1234");
-          }
-        }}
-      />
-    );
-  }
+  useEffect(() => {
+    if (!dataLoaded) {
+      return;
+    }
 
-  if (stage === "profile") {
-    return (
-      <SafeAreaView style={styles.safeWhite}>
-        <StatusBar barStyle="dark-content" />
+    async function saveData() {
+      try {
+        const data = {
+          stage,
+          name,
+          username,
+          profilePhoto,
+          posts,
+          createdPosts,
+        };
 
-        <View style={styles.authContainer}>
-          <Brand />
+        await AsyncStorage.setItem(
+          "earnzoData",
+          JSON.stringify(data)
+        );
+      } catch (error) {
+        console.log("Save error:", error);
+      }
+    }
 
-          <View style={styles.authCard}>
-            <Text style={styles.authTitle}>Create Profile</Text>
+    saveData();
+  }, [
+    dataLoaded,
+    stage,
+    name,
+    username,
+    profilePhoto,
+    posts,
+    createdPosts,
+  ]);
 
-            <TextInput
-              style={styles.input}
-              placeholder="Your Name"
-              value={name}
-              onChangeText={setName}
-            />
-
-            <TextInput
-              style={[styles.input, { marginTop: 12 }]}
-              placeholder="Username"
-              value={username}
-              autoCapitalize="none"
-              onChangeText={(text) =>
-                setUsername(
-                  text.replace(/\s/g, "").toLowerCase()
-                )
-              }
-            />
-
-            <Pressable
-              style={styles.primaryButton}
-              onPress={() => {
-                if (name.trim() && username.trim()) {
-                  setStage("app");
-                } else {
-                  Alert.alert(
-                    "Please enter name and username"
-                  );
-                }
-              }}
-            >
-              <Text style={styles.primaryButtonText}>
-                Start Earnzo
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  let screen;
-
-  if (tab === "Home") {
-    screen = (
-      <HomeScreen
-        posts={posts}
-        setPosts={setPosts}
-        filter={filter}
-        setFilter={setFilter}
-        openComments={(post) => {
-          setCommentPost(post);
-          setCommentText("");
-        }}
-      />
-    );
-  } else if (tab === "Shorts") {
-    screen = (
-      <ShortsScreen
-        posts={posts}
-        setPosts={setPosts}
-        openComments={(post) => {
-          setCommentPost(post);
-          setCommentText("");
-        }}
-      />
-    );
-  } else if (tab === "Create") {
-    screen = (
-      <CreateScreen
-        posts={posts}
-        setPosts={setPosts}
-        createdPosts={createdPosts}
-        setCreatedPosts={setCreatedPosts}
-        name={name || "Creator"}
-        username={username || "creator"}
-      />
-    );
-  } else if (tab === "Earn") {
-    screen = <EarnScreen wallet={wallet} />;
-  } else {
-    screen = (
-      <ProfileScreen
-        name={name}
-        profilePhoto={profilePhoto}
-        setProfilePhoto={setProfilePhoto}
-        username={username}
-        wallet={wallet}
-        createdPosts={createdPosts}
-        setPosts={setPosts}
-        setCreatedPosts={setCreatedPosts}
-        onEdit={() => {
-          setEditName(name);
-          setEditUsername(username);
-          setEditProfile(true);
-        }}
-        onLogout={async () => {
-  await AsyncStorage.removeItem("earnzoData");
-
-  setName("");
-  setProfilePhoto("");
-  setUsername("");
-  setMobile("");
-  setOtp("");
-  setPosts(demoPosts);
-  setCreatedPosts([]);
-  setTab("Home");
-  setStage("login");
-}}
-      />
-    );
+  function openComments(post) {
+    setCommentPost(post);
+    setCommentText("");
   }
 
   function sendComment() {
@@ -327,6 +200,20 @@ useEffect(() => {
     }
 
     setPosts((oldPosts) =>
+      oldPosts.map((post) =>
+        post.id === commentPost.id
+          ? {
+              ...post,
+              comments: [
+                ...(post.comments || []),
+                text,
+              ],
+            }
+          : post
+      )
+    );
+
+    setCreatedPosts((oldPosts) =>
       oldPosts.map((post) =>
         post.id === commentPost.id
           ? {
@@ -355,6 +242,207 @@ useEffect(() => {
     setCommentText("");
   }
 
+  async function logout() {
+    try {
+      await AsyncStorage.removeItem("earnzoData");
+    } catch (error) {
+      console.log(error);
+    }
+
+    setName("");
+    setUsername("");
+    setProfilePhoto("");
+    setMobile("");
+    setOtp("");
+    setPosts(demoPosts);
+    setCreatedPosts([]);
+    setTab("Home");
+    setStage("login");
+  }
+
+  if (stage === "login") {
+    return (
+      <AuthScreen
+        title="Welcome to Earnzo"
+        subtitle="Enter your mobile number"
+        placeholder="Mobile Number"
+        value={mobile}
+        setValue={setMobile}
+        keyboardType="phone-pad"
+        buttonText="Continue"
+        note="Testing OTP: 1234"
+        maxLength={10}
+        onPress={() => {
+          if (mobile.length !== 10) {
+            Alert.alert(
+              "Please enter a valid 10-digit mobile number"
+            );
+            return;
+          }
+
+          setStage("otp");
+        }}
+      />
+    );
+  }
+
+  if (stage === "otp") {
+    return (
+      <AuthScreen
+        title="Verify OTP"
+        subtitle={`OTP sent to +91 ${mobile}`}
+        placeholder="4-digit OTP"
+        value={otp}
+        setValue={setOtp}
+        keyboardType="number-pad"
+        buttonText="Verify OTP"
+        maxLength={4}
+        onPress={() => {
+          if (otp !== "1234") {
+            Alert.alert(
+              "Wrong OTP",
+              "Testing OTP is 1234"
+            );
+            return;
+          }
+
+          setStage("profile");
+        }}
+      />
+    );
+  }
+
+  if (stage === "profile") {
+    return (
+      <SafeAreaView style={styles.safeWhite}>
+        <StatusBar barStyle="dark-content" />
+
+        <View style={styles.authContainer}>
+          <Brand />
+
+          <View style={styles.authCard}>
+            <Text style={styles.authTitle}>
+              Create Profile
+            </Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Your Name"
+              value={name}
+              onChangeText={setName}
+            />
+
+            <TextInput
+              style={[
+                styles.input,
+                { marginTop: 12 },
+              ]}
+              placeholder="Username"
+              value={username}
+              autoCapitalize="none"
+              onChangeText={(text) =>
+                setUsername(
+                  text
+                    .replace(/\s/g, "")
+                    .toLowerCase()
+                )
+              }
+            />
+
+            <Pressable
+              style={styles.primaryButton}
+              onPress={() => {
+                if (
+                  !name.trim() ||
+                  !username.trim()
+                ) {
+                  Alert.alert(
+                    "Please enter name and username"
+                  );
+                  return;
+                }
+
+                setStage("app");
+              }}
+            >
+              <Text style={styles.primaryButtonText}>
+                Start Earnzo
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  let screen = null;
+
+  if (tab === "Home") {
+    screen = (
+      <HomeScreen
+        posts={posts}
+        setPosts={setPosts}
+        filter={filter}
+        setFilter={setFilter}
+        openComments={openComments}
+      />
+    );
+  } else if (tab === "Shorts") {
+    screen = (
+      <ShortsScreen
+        posts={posts}
+        setPosts={setPosts}
+        openComments={openComments}
+      />
+    );
+  } else if (tab === "Create") {
+    screen = (
+      <CreateScreen
+        posts={posts}
+        setPosts={setPosts}
+        createdPosts={createdPosts}
+        setCreatedPosts={setCreatedPosts}
+        name={name || "Creator"}
+        username={username || "creator"}
+      />
+    );
+  } else if (tab === "Earn") {
+    screen = <EarnScreen wallet={wallet} />;
+  } else {
+    screen = (
+      <ProfileScreen
+        name={name}
+        username={username}
+        profilePhoto={profilePhoto}
+        setProfilePhoto={setProfilePhoto}
+        wallet={wallet}
+        createdPosts={createdPosts}
+        setCreatedPosts={setCreatedPosts}
+        setPosts={setPosts}
+        onEdit={() => {
+          setEditName(name);
+          setEditUsername(username);
+          setEditProfile(true);
+        }}
+        onLogout={logout}
+      />
+    );
+  }
+
+  const searchResults = posts.filter((post) => {
+    const q = searchText.trim().toLowerCase();
+
+    if (!q) {
+      return false;
+    }
+
+    return (
+      post.name?.toLowerCase().includes(q) ||
+      post.handle?.toLowerCase().includes(q) ||
+      post.title?.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar
@@ -365,11 +453,15 @@ useEffect(() => {
       <View style={styles.header}>
         <View style={styles.headerBrand}>
           <View style={styles.smallLogo}>
-            <Text style={styles.smallLogoText}>E</Text>
+            <Text style={styles.smallLogoText}>
+              E
+            </Text>
           </View>
 
           <View>
-            <Text style={styles.logoText}>Earnzo</Text>
+            <Text style={styles.logoText}>
+              Earnzo
+            </Text>
 
             <Text style={styles.smallText}>
               Create • Connect • Earn
@@ -378,48 +470,26 @@ useEffect(() => {
         </View>
 
         <View style={styles.headerRight}>
-        <Pressable
-  style={{
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: "#FFF1F5",
-    alignItems: "center",
-    justifyContent: "center",
-  }}
-  onPress={() => setNotificationOpen(true)}
->
-  <Text
-    style={{
-      fontSize: 18,
-      color: COLORS.pink,
-      fontWeight: "900",
-    }}
-  >
-    🔔
-  </Text>
-</Pressable>  
           <Pressable
-  style={{
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: "#F1EEFF",
-    alignItems: "center",
-    justifyContent: "center",
-  }}
-  onPress={() => setSearchOpen(true)}
->
-  <Text
-    style={{
-      fontSize: 18,
-      color: COLORS.purple,
-      fontWeight: "900",
-    }}
-  >
-    🔍
-  </Text>
-</Pressable>
+            style={styles.notificationButton}
+            onPress={() =>
+              setNotificationOpen(true)
+            }
+          >
+            <Text style={{ fontSize: 17 }}>
+              🔔
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.searchButton}
+            onPress={() => setSearchOpen(true)}
+          >
+            <Text style={{ fontSize: 17 }}>
+              🔍
+            </Text>
+          </Pressable>
+
           <View style={styles.walletPill}>
             <Text style={styles.walletPillText}>
               ₹{wallet}
@@ -430,9 +500,16 @@ useEffect(() => {
             style={styles.avatar}
             onPress={() => setTab("Profile")}
           >
-            <Text style={styles.avatarText}>
-              {(name || "S")[0].toUpperCase()}
-            </Text>
+            {profilePhoto ? (
+              <Image
+                source={{ uri: profilePhoto }}
+                style={styles.headerAvatarImage}
+              />
+            ) : (
+              <Text style={styles.avatarText}>
+                {(name || "S")[0].toUpperCase()}
+              </Text>
+            )}
           </Pressable>
         </View>
       </View>
@@ -465,7 +542,7 @@ useEffect(() => {
                 style={[
                   styles.navIcon,
                   tab === navName && {
-                    color: "#FFFFFF",
+                    color: COLORS.white,
                   },
                 ]}
               >
@@ -487,302 +564,304 @@ useEffect(() => {
         ))}
       </View>
 
+      {/* SEARCH MODAL */}
       <Modal
-{/* SEARCH MODAL */}
-<Modal
-  visible={searchOpen}
-  transparent
-  animationType="slide"
-  onRequestClose={() => setSearchOpen(false)}
->
-  <KeyboardAvoidingView
-    style={styles.modalBackground}
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-  >
-    <View style={styles.bottomSheet}>
-      <View style={styles.sheetHandle} />
-
-      <View style={styles.modalHeader}>
-        <Text style={styles.modalTitle}>Search</Text>
-
-        <Pressable onPress={() => setSearchOpen(false)}>
-          <Text style={styles.closeText}>✕</Text>
-        </Pressable>
-      </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Search creator or post..."
-        value={searchText}
-        onChangeText={setSearchText}
-      />
-
-      <ScrollView
-        style={{ maxHeight: 350, marginTop: 14 }}
-        keyboardShouldPersistTaps="handled"
+        visible={searchOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() =>
+          setSearchOpen(false)
+        }
       >
-        {posts
-          .filter((post) => {
-            const q = searchText.trim().toLowerCase();
+        <KeyboardAvoidingView
+          style={styles.modalBackground}
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : "height"
+          }
+        >
+          <View style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
 
-            if (!q) return false;
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Search
+              </Text>
 
-            return (
-              post.name?.toLowerCase().includes(q) ||
-              post.handle?.toLowerCase().includes(q) ||
-              post.title?.toLowerCase().includes(q)
-            );
-          })
-          .map((post) => (
-            <Pressable
-              key={post.id}
-              style={{
-                paddingVertical: 12,
-                borderBottomWidth: 1,
-                borderBottomColor: COLORS.line,
-              }}
-              onPress={() => {
-                setSearchOpen(false);
-                setSearchText("");
-                setTab("Home");
-              }}
-            >
-              <Text
-                style={{
-                  fontWeight: "900",
-                  color: COLORS.text,
-                }}
+              <Pressable
+                onPress={() =>
+                  setSearchOpen(false)
+                }
               >
-                {post.name}
-              </Text>
-
-              <Text
-                style={{
-                  color: COLORS.gray,
-                  marginTop: 3,
-                }}
-              >
-                {post.handle}
-              </Text>
-
-              <Text
-                style={{
-                  color: COLORS.text,
-                  marginTop: 6,
-                }}
-              >
-                {post.title}
-              </Text>
-            </Pressable>
-          ))}
-
-        {searchText.trim() &&
-        posts.filter((post) => {
-          const q = searchText.trim().toLowerCase();
-
-          return (
-            post.name?.toLowerCase().includes(q) ||
-            post.handle?.toLowerCase().includes(q) ||
-            post.title?.toLowerCase().includes(q)
-          );
-        }).length === 0 ? (
-          <Text style={styles.emptyText}>
-            No results found
-          </Text>
-        ) : null}
-      </ScrollView>
-    </View>
-  </KeyboardAvoidingView>
-</Modal>
-
-{/* NOTIFICATION MODAL */}
-<Modal
-  visible={notificationOpen}
-  transparent
-  animationType="slide"
-  onRequestClose={() => setNotificationOpen(false)}
->
-  <View style={styles.modalBackground}>
-    <View style={styles.bottomSheet}>
-      <View style={styles.sheetHandle} />
-
-      <View style={styles.modalHeader}>
-        <Text style={styles.modalTitle}>Notifications</Text>
-
-        <Pressable onPress={() => setNotificationOpen(false)}>
-          <Text style={styles.closeText}>✕</Text>
-        </Pressable>
-      </View>
-
-      <ScrollView style={{ maxHeight: 380 }}>
-        {[
-          {
-            icon: "❤️",
-            title: "New Like",
-            text: "Ravi liked your video.",
-            time: "2 min ago",
-          },
-          {
-            icon: "💬",
-            title: "New Comment",
-            text: "Neha commented on your post.",
-            time: "10 min ago",
-          },
-          {
-            icon: "👤",
-            title: "New Follower",
-            text: "Aman started following you.",
-            time: "1 hour ago",
-          },
-          {
-            icon: "₹",
-            title: "Earnings",
-            text: "₹120 added to your creator wallet.",
-            time: "Today",
-          },
-        ].map((item, index) => (
-          <View
-            key={index}
-            style={{
-              flexDirection: "row",
-              gap: 12,
-              paddingVertical: 13,
-              borderBottomWidth: 1,
-              borderBottomColor: COLORS.line,
-            }}
-          >
-            <View
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 14,
-                backgroundColor: COLORS.softPurple,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ fontSize: 20 }}>
-                {item.icon}
-              </Text>
+                <Text style={styles.closeText}>
+                  ✕
+                </Text>
+              </Pressable>
             </View>
 
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontWeight: "900",
-                  color: COLORS.text,
-                }}
-              >
-                {item.title}
-              </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Search creator or post..."
+              value={searchText}
+              onChangeText={setSearchText}
+            />
 
-              <Text
-                style={{
-                  color: COLORS.text,
-                  marginTop: 3,
-                }}
-              >
-                {item.text}
-              </Text>
-
-              <Text
-                style={{
-                  color: COLORS.gray,
-                  fontSize: 11,
-                  marginTop: 4,
-                }}
-              >
-                {item.time}
-              </Text>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
-    </View>
-  </View>
-</Modal>
-
-{/* COMMENTS MODAL */}
-<Modal
-  visible={!!commentPost}
-  transparent
-  animationType="slide"
-  onRequestClose={() => setCommentPost(null)}
->
-  <KeyboardAvoidingView
-    style={styles.modalBackground}
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-  >
-    <View style={styles.bottomSheet}>
-      <View style={styles.sheetHandle} />
-
-      <View style={styles.modalHeader}>
-        <Text style={styles.modalTitle}>Comments</Text>
-
-        <Pressable onPress={() => setCommentPost(null)}>
-          <Text style={styles.closeText}>✕</Text>
-        </Pressable>
-      </View>
-
-      <ScrollView
-        style={{ maxHeight: 300 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {(commentPost?.comments || []).length === 0 ? (
-          <Text style={styles.emptyText}>
-            No comments yet 😊
-          </Text>
-        ) : (
-          (commentPost?.comments || []).map((comment, index) => (
-            <View
-              key={`${comment}-${index}`}
-              style={styles.commentRow}
+            <ScrollView
+              style={{
+                maxHeight: 360,
+                marginTop: 14,
+              }}
+              keyboardShouldPersistTaps="handled"
             >
-              <View style={styles.commentAvatar}>
-                <Text
-                  style={{
-                    color: COLORS.purple,
-                    fontWeight: "900",
+              {searchResults.map((post) => (
+                <Pressable
+                  key={post.id}
+                  style={styles.searchResult}
+                  onPress={() => {
+                    setSearchOpen(false);
+                    setSearchText("");
+                    setTab("Home");
                   }}
                 >
-                  U
-                </Text>
-              </View>
+                  <Text style={styles.creatorName}>
+                    {post.name}
+                  </Text>
 
-              <View style={styles.commentBubble}>
-                <Text style={styles.commentUser}>
-                  User
-                </Text>
+                  <Text style={styles.smallText}>
+                    {post.handle}
+                  </Text>
 
-                <Text>{comment}</Text>
-              </View>
+                  <Text
+                    style={{
+                      color: COLORS.text,
+                      marginTop: 5,
+                    }}
+                  >
+                    {post.title}
+                  </Text>
+                </Pressable>
+              ))}
+
+              {searchText.trim() &&
+              searchResults.length === 0 ? (
+                <Text style={styles.emptyText}>
+                  No results found
+                </Text>
+              ) : null}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* NOTIFICATION MODAL */}
+      <Modal
+        visible={notificationOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() =>
+          setNotificationOpen(false)
+        }
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
+
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Notifications
+              </Text>
+
+              <Pressable
+                onPress={() =>
+                  setNotificationOpen(false)
+                }
+              >
+                <Text style={styles.closeText}>
+                  ✕
+                </Text>
+              </Pressable>
             </View>
-          ))
-        )}
-      </ScrollView>
 
-      <View style={styles.commentComposer}>
-        <TextInput
-          style={styles.commentInput}
-          placeholder="Write a comment..."
-          value={commentText}
-          onChangeText={setCommentText}
-          onSubmitEditing={sendComment}
-        />
+            {[
+              {
+                icon: "❤️",
+                title: "New Like",
+                text: "Ravi liked your video.",
+                time: "2 min ago",
+              },
+              {
+                icon: "💬",
+                title: "New Comment",
+                text: "Neha commented on your post.",
+                time: "10 min ago",
+              },
+              {
+                icon: "👤",
+                title: "New Follower",
+                text: "Aman started following you.",
+                time: "1 hour ago",
+              },
+              {
+                icon: "₹",
+                title: "Earnings",
+                text: "₹120 added to your creator wallet.",
+                time: "Today",
+              },
+            ].map((item, index) => (
+              <View
+                key={index}
+                style={styles.notificationRow}
+              >
+                <View
+                  style={styles.notificationIcon}
+                >
+                  <Text style={{ fontSize: 20 }}>
+                    {item.icon}
+                  </Text>
+                </View>
 
-        <Pressable
-          style={styles.sendButton}
-          onPress={sendComment}
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={styles.creatorName}
+                  >
+                    {item.title}
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: COLORS.text,
+                      marginTop: 3,
+                    }}
+                  >
+                    {item.text}
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: COLORS.gray,
+                      fontSize: 11,
+                      marginTop: 4,
+                    }}
+                  >
+                    {item.time}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      </Modal>
+
+      {/* COMMENTS MODAL */}
+      <Modal
+        visible={!!commentPost}
+        transparent
+        animationType="slide"
+        onRequestClose={() =>
+          setCommentPost(null)
+        }
+      >
+        <KeyboardAvoidingView
+          style={styles.modalBackground}
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : "height"
+          }
         >
-          <Text style={styles.sendButtonText}>
-            Send
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  </KeyboardAvoidingView>
-</Modal>
+          <View style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
 
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Comments
+              </Text>
+
+              <Pressable
+                onPress={() =>
+                  setCommentPost(null)
+                }
+              >
+                <Text style={styles.closeText}>
+                  ✕
+                </Text>
+              </Pressable>
+            </View>
+
+            <ScrollView
+              style={{ maxHeight: 300 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              {(commentPost?.comments || [])
+                .length === 0 ? (
+                <Text style={styles.emptyText}>
+                  No comments yet 😊
+                </Text>
+              ) : (
+                (
+                  commentPost?.comments || []
+                ).map((comment, index) => (
+                  <View
+                    key={`${index}-${comment}`}
+                    style={styles.commentRow}
+                  >
+                    <View
+                      style={styles.commentAvatar}
+                    >
+                      <Text
+                        style={{
+                          color: COLORS.purple,
+                          fontWeight: "900",
+                        }}
+                      >
+                        U
+                      </Text>
+                    </View>
+
+                    <View
+                      style={styles.commentBubble}
+                    >
+                      <Text
+                        style={styles.commentUser}
+                      >
+                        User
+                      </Text>
+
+                      <Text>{comment}</Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+
+            <View
+              style={styles.commentComposer}
+            >
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Write a comment..."
+                value={commentText}
+                onChangeText={setCommentText}
+                onSubmitEditing={sendComment}
+              />
+
+              <Pressable
+                style={styles.sendButton}
+                onPress={sendComment}
+              >
+                <Text
+                  style={styles.sendButtonText}
+                >
+                  Send
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* EDIT PROFILE MODAL */}
       <Modal
         visible={editProfile}
         transparent
@@ -852,14 +931,11 @@ useEffect(() => {
                 setUsername(
                   editUsername.trim()
                 );
-
                 setEditProfile(false);
               }}
             >
               <Text
-                style={
-                  styles.primaryButtonText
-                }
+                style={styles.primaryButtonText}
               >
                 Save Changes
               </Text>
@@ -874,13 +950,14 @@ useEffect(() => {
 function AuthScreen({
   title,
   subtitle,
+  placeholder,
   value,
   setValue,
-  placeholder,
   keyboardType,
   buttonText,
   onPress,
   note,
+  maxLength,
 }) {
   return (
     <SafeAreaView style={styles.safeWhite}>
@@ -904,11 +981,7 @@ function AuthScreen({
             keyboardType={keyboardType}
             value={value}
             onChangeText={setValue}
-            maxLength={
-              placeholder.includes("OTP")
-                ? 4
-                : 10
-            }
+            maxLength={maxLength}
           />
 
           <Pressable
@@ -916,9 +989,7 @@ function AuthScreen({
             onPress={onPress}
           >
             <Text
-              style={
-                styles.primaryButtonText
-              }
+              style={styles.primaryButtonText}
             >
               {buttonText}
             </Text>
@@ -970,7 +1041,7 @@ function HomeScreen({
               ...post,
               liked: !post.liked,
               likes:
-                post.likes +
+                (post.likes || 0) +
                 (post.liked ? -1 : 1),
             }
           : post
@@ -984,8 +1055,7 @@ function HomeScreen({
         post.id === id
           ? {
               ...post,
-              following:
-                !post.following,
+              following: !post.following,
             }
           : post
       )
@@ -1008,8 +1078,7 @@ function HomeScreen({
 
   if (filter === "India") {
     visiblePosts = posts.filter(
-      (post) =>
-        post.country === "India"
+      (post) => post.country === "India"
     );
   }
 
@@ -1045,9 +1114,7 @@ function HomeScreen({
 
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={
-          false
-        }
+        showsHorizontalScrollIndicator={false}
         style={{ marginBottom: 14 }}
       >
         <View style={styles.filters}>
@@ -1064,15 +1131,13 @@ function HomeScreen({
                 filter === item &&
                   styles.filterButtonActive,
               ]}
-              onPress={() =>
-                setFilter(item)
-              }
+              onPress={() => setFilter(item)}
             >
               <Text
                 style={[
                   styles.filterText,
                   filter === item && {
-                    color: "#FFFFFF",
+                    color: COLORS.white,
                   },
                 ]}
               >
@@ -1097,14 +1162,12 @@ function HomeScreen({
                   styles.creatorAvatarText
                 }
               >
-                {post.name[0]}
+                {(post.name || "U")[0]}
               </Text>
             </View>
 
             <View style={{ flex: 1 }}>
-              <Text
-                style={styles.creatorName}
-              >
+              <Text style={styles.creatorName}>
                 {post.name}
               </Text>
 
@@ -1165,7 +1228,9 @@ function HomeScreen({
                 ]}
               >
                 {post.liked ? "♥" : "♡"}{" "}
-                {formatNumber(post.likes)}
+                {formatNumber(
+                  post.likes || 0
+                )}
               </Text>
             </Pressable>
 
@@ -1174,14 +1239,9 @@ function HomeScreen({
                 openComments(post)
               }
             >
-              <Text
-                style={styles.actionText}
-              >
+              <Text style={styles.actionText}>
                 💬{" "}
-                {
-                  (post.comments || [])
-                    .length
-                }
+                {(post.comments || []).length}
               </Text>
             </Pressable>
 
@@ -1192,9 +1252,7 @@ function HomeScreen({
                 })
               }
             >
-              <Text
-                style={styles.actionText}
-              >
+              <Text style={styles.actionText}>
                 ↗ Share
               </Text>
             </Pressable>
@@ -1211,15 +1269,11 @@ function PostMedia({ post }) {
     post.mediaUri
   ) {
     return (
-      <View style={styles.imageContainer}>
-        <Image
-          source={{
-            uri: post.mediaUri,
-          }}
-          style={styles.postImage}
-          resizeMode="cover"
-        />
-      </View>
+      <Image
+        source={{ uri: post.mediaUri }}
+        style={styles.postImage}
+        resizeMode="cover"
+      />
     );
   }
 
@@ -1228,9 +1282,7 @@ function PostMedia({ post }) {
       post.mediaType === "long") &&
     post.mediaUri
   ) {
-    return (
-      <VideoCard uri={post.mediaUri} />
-    );
+    return <VideoCard uri={post.mediaUri} />;
   }
 
   return (
@@ -1275,8 +1327,7 @@ function ShortsScreen({
   openComments,
 }) {
   const shorts = posts.filter(
-    (post) =>
-      post.mediaType === "short"
+    (post) => post.mediaType === "short"
   );
 
   const [shortIndex, setShortIndex] =
@@ -1311,7 +1362,7 @@ function ShortsScreen({
               ...item,
               liked: !item.liked,
               likes:
-                item.likes +
+                (item.likes || 0) +
                 (item.liked ? -1 : 1),
             }
           : item
@@ -1322,9 +1373,7 @@ function ShortsScreen({
   return (
     <View style={styles.shortsScreen}>
       <View style={styles.shortsTabs}>
-        <Text
-          style={styles.shortsTabActive}
-        >
+        <Text style={styles.shortsTabActive}>
           For You
         </Text>
 
@@ -1336,9 +1385,7 @@ function ShortsScreen({
       <View style={styles.shortMedia}>
         {post.mediaType === "short" &&
         post.mediaUri ? (
-          <ShortVideo
-            uri={post.mediaUri}
-          />
+          <ShortVideo uri={post.mediaUri} />
         ) : (
           <View style={styles.shortDemo}>
             <Text
@@ -1357,15 +1404,11 @@ function ShortsScreen({
       </View>
 
       <View style={styles.shortInfo}>
-        <Text
-          style={styles.shortCreator}
-        >
+        <Text style={styles.shortCreator}>
           {post.handle}
         </Text>
 
-        <Text
-          style={styles.shortCaption}
-        >
+        <Text style={styles.shortCaption}>
           {post.title}
         </Text>
       </View>
@@ -1397,10 +1440,7 @@ function ShortsScreen({
           >
             💬
             {"\n"}
-            {
-              (post.comments || [])
-                .length
-            }
+            {(post.comments || []).length}
           </Text>
         </Pressable>
 
@@ -1458,7 +1498,9 @@ function ShortVideo({ uri }) {
     return () => {
       try {
         player.pause();
-      } catch (error) {}
+      } catch (error) {
+        console.log(error);
+      }
     };
   }, [player]);
 
@@ -1481,39 +1523,28 @@ function CreateScreen({
   name,
   username,
 }) {
-  const [media, setMedia] =
-    useState(null);
-
+  const [media, setMedia] = useState(null);
   const [mediaType, setMediaType] =
     useState("short");
 
   const [caption, setCaption] =
     useState("");
 
-  const [cover, setCover] =
-    useState(null);
-
+  const [cover, setCover] = useState(null);
   const [tagPeople, setTagPeople] =
     useState("");
-
   const [location, setLocation] =
     useState("");
-
   const [topics, setTopics] =
     useState("");
 
-  const [popup, setPopup] =
-    useState("");
-
+  const [popup, setPopup] = useState("");
   const [tempValue, setTempValue] =
     useState("");
 
   const [liveSetup, setLiveSetup] =
     useState(false);
-
-  const [live, setLive] =
-    useState(false);
-
+  const [live, setLive] = useState(false);
   const [liveTitle, setLiveTitle] =
     useState("");
 
@@ -1548,34 +1579,34 @@ function CreateScreen({
             type === "photo"
               ? ["images"]
               : ["videos"],
-
           quality: 0.9,
         }
       );
 
     if (
-      !result.canceled &&
-      result.assets?.[0]
+      result.canceled ||
+      !result.assets?.[0]
     ) {
-      const selected =
-        result.assets[0];
-
-      if (
-        type === "short" &&
-        selected.duration &&
-        selected.duration > 90000
-      ) {
-        Alert.alert(
-          "Short Too Long",
-          "Maximum duration is 1.5 minutes."
-        );
-
-        return;
-      }
-
-      setMediaType(type);
-      setMedia(selected);
+      return;
     }
+
+    const selected =
+      result.assets[0];
+
+    if (
+      type === "short" &&
+      selected.duration &&
+      selected.duration > 90000
+    ) {
+      Alert.alert(
+        "Short Too Long",
+        "Maximum duration is 1.5 minutes."
+      );
+      return;
+    }
+
+    setMediaType(type);
+    setMedia(selected);
   }
 
   async function selectCover() {
@@ -1626,7 +1657,6 @@ function CreateScreen({
       Alert.alert(
         "Please select media first"
       );
-
       return;
     }
 
@@ -1634,7 +1664,6 @@ function CreateScreen({
       Alert.alert(
         "Please write a caption"
       );
-
       return;
     }
 
@@ -1649,12 +1678,9 @@ function CreateScreen({
       liked: false,
       trending: false,
       country: "India",
-
       mediaType,
       mediaUri: media.uri,
-
       coverUri: cover?.uri || "",
-
       tagPeople,
       location,
       topics,
@@ -1677,39 +1703,23 @@ function CreateScreen({
     setLocation("");
     setTopics("");
 
-    if (mediaType === "short") {
-      Alert.alert(
-        "Published Successfully ✅",
-        "Your Short is now visible on Home, Shorts and Profile."
-      );
-    } else if (
-      mediaType === "long"
-    ) {
-      Alert.alert(
-        "Published Successfully ✅",
-        "Your video is now visible on Home and Profile."
-      );
-    } else {
-      Alert.alert(
-        "Published Successfully ✅",
-        "Your photo is now visible on Home and Profile."
-      );
-    }
+    Alert.alert(
+      "Published Successfully ✅",
+      mediaType === "short"
+        ? "Your Short is now visible on Home, Shorts and Profile."
+        : "Your post is now visible on Home and Profile."
+    );
   }
 
   if (live) {
     return (
       <View style={styles.liveScreen}>
         <View style={styles.liveTop}>
-          <Text
-            style={styles.liveBadge}
-          >
+          <Text style={styles.liveBadge}>
             LIVE
           </Text>
 
-          <Text
-            style={styles.liveViewers}
-          >
+          <Text style={styles.liveViewers}>
             👁 0 viewers
           </Text>
         </View>
@@ -1718,9 +1728,7 @@ function CreateScreen({
           {liveTitle}
         </Text>
 
-        <View
-          style={styles.liveCamera}
-        >
+        <View style={styles.liveCamera}>
           <Text style={styles.liveDot}>
             ●
           </Text>
@@ -1739,9 +1747,7 @@ function CreateScreen({
           }}
         >
           <Text
-            style={
-              styles.primaryButtonText
-            }
+            style={styles.primaryButtonText}
           >
             End Live
           </Text>
@@ -1753,9 +1759,7 @@ function CreateScreen({
   if (liveSetup) {
     return (
       <ScrollView
-        contentContainerStyle={
-          styles.scroll
-        }
+        contentContainerStyle={styles.scroll}
       >
         <Text style={styles.heading}>
           Go Live 🔴
@@ -1770,23 +1774,20 @@ function CreateScreen({
           />
 
           <Pressable
-            style={
-              styles.primaryButton
-            }
+            style={styles.primaryButton}
             onPress={() => {
-              if (liveTitle.trim()) {
-                setLive(true);
-              } else {
+              if (!liveTitle.trim()) {
                 Alert.alert(
                   "Please enter live title"
                 );
+                return;
               }
+
+              setLive(true);
             }}
           >
             <Text
-              style={
-                styles.primaryButtonText
-              }
+              style={styles.primaryButtonText}
             >
               Start Live
             </Text>
@@ -1799,9 +1800,7 @@ function CreateScreen({
             }
           >
             <Text
-              style={
-                styles.cancelButtonText
-              }
+              style={styles.cancelButtonText}
             >
               Cancel
             </Text>
@@ -1814,23 +1813,17 @@ function CreateScreen({
   return (
     <>
       <ScrollView
-        contentContainerStyle={
-          styles.scroll
-        }
+        contentContainerStyle={styles.scroll}
       >
         <Text style={styles.heading}>
           Create
         </Text>
 
-        <Text
-          style={styles.subtitleText}
-        >
+        <Text style={styles.subtitleText}>
           Choose what you want to publish.
         </Text>
 
-        <View
-          style={styles.createGrid}
-        >
+        <View style={styles.createGrid}>
           <CreateButton
             icon="▶"
             title="Short / Reel"
@@ -1874,44 +1867,23 @@ function CreateScreen({
 
         {media ? (
           <View
-            style={
-              styles.selectedMediaCard
-            }
+            style={styles.selectedMediaCard}
           >
-            <View
-              style={
-                styles.selectedMediaHeader
-              }
+            <Text
+              style={styles.selectedMediaTitle}
             >
-              <Text
-                style={
-                  styles.selectedMediaTitle
-                }
-              >
-                Selected{" "}
-                {mediaType === "long"
-                  ? "Long Video"
-                  : mediaType ===
-                    "short"
-                  ? "Short / Reel"
-                  : "Photo"}
-              </Text>
-
-              <Text
-                style={styles.readyText}
-              >
-                ✓ Ready
-              </Text>
-            </View>
+              Selected{" "}
+              {mediaType === "short"
+                ? "Short / Reel"
+                : mediaType === "long"
+                ? "Long Video"
+                : "Photo"}
+            </Text>
 
             {mediaType === "photo" ? (
               <Image
-                source={{
-                  uri: media.uri,
-                }}
-                style={
-                  styles.previewImage
-                }
+                source={{ uri: media.uri }}
+                style={styles.previewImage}
               />
             ) : (
               <SelectedVideo
@@ -1919,11 +1891,8 @@ function CreateScreen({
               />
             )}
 
-            <Text
-              style={styles.smallText}
-            >
-              {media.fileName ||
-                "Media selected successfully"}
+            <Text style={styles.readyText}>
+              ✓ Ready
             </Text>
           </View>
         ) : null}
@@ -1980,9 +1949,7 @@ function CreateScreen({
 
           {cover ? (
             <Image
-              source={{
-                uri: cover.uri,
-              }}
+              source={{ uri: cover.uri }}
               style={styles.coverImage}
             />
           ) : null}
@@ -1992,9 +1959,7 @@ function CreateScreen({
             onPress={publishPost}
           >
             <Text
-              style={
-                styles.publishButtonText
-              }
+              style={styles.publishButtonText}
             >
               Publish Now
             </Text>
@@ -2010,25 +1975,14 @@ function CreateScreen({
           setPopup("")
         }
       >
-        <View
-          style={
-            styles.modalBackground
-          }
-        >
-          <View
-            style={styles.bottomSheet}
-          >
-            <View
-              style={styles.sheetHandle}
-            />
+        <View style={styles.modalBackground}>
+          <View style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
 
-            <Text
-              style={styles.modalTitle}
-            >
+            <Text style={styles.modalTitle}>
               {popup === "tag"
                 ? "Tag People"
-                : popup ===
-                  "location"
+                : popup === "location"
                 ? "Add Location"
                 : "Add Topics"}
             </Text>
@@ -2041,8 +1995,7 @@ function CreateScreen({
               placeholder={
                 popup === "tag"
                   ? "@username1, @username2"
-                  : popup ===
-                    "location"
+                  : popup === "location"
                   ? "Delhi, India"
                   : "EV, Travel, Tech"
               }
@@ -2051,15 +2004,11 @@ function CreateScreen({
             />
 
             <Pressable
-              style={
-                styles.primaryButton
-              }
+              style={styles.primaryButton}
               onPress={savePopupValue}
             >
               <Text
-                style={
-                  styles.primaryButtonText
-                }
+                style={styles.primaryButtonText}
               >
                 Save
               </Text>
@@ -2072,9 +2021,7 @@ function CreateScreen({
               }
             >
               <Text
-                style={
-                  styles.cancelButtonText
-                }
+                style={styles.cancelButtonText}
               >
                 Cancel
               </Text>
@@ -2096,9 +2043,7 @@ function SelectedVideo({ uri }) {
 
   return (
     <View
-      style={
-        styles.selectedVideoContainer
-      }
+      style={styles.selectedVideoContainer}
     >
       <VideoView
         style={styles.selectedVideo}
@@ -2122,38 +2067,28 @@ function CreateButton({
     <Pressable
       style={[
         styles.createButton,
-        {
-          borderColor: color,
-        },
+        { borderColor: color },
       ]}
       onPress={onPress}
     >
       <View
         style={[
           styles.createIcon,
-          {
-            backgroundColor: color,
-          },
+          { backgroundColor: color },
         ]}
       >
         <Text
-          style={
-            styles.createIconText
-          }
+          style={styles.createIconText}
         >
           {icon}
         </Text>
       </View>
 
-      <Text
-        style={styles.createTitle}
-      >
+      <Text style={styles.createTitle}>
         {title}
       </Text>
 
-      <Text
-        style={styles.createSubtitle}
-      >
+      <Text style={styles.createSubtitle}>
         {subtitle}
       </Text>
     </Pressable>
@@ -2171,26 +2106,18 @@ function OptionButton({
       onPress={onPress}
     >
       <View style={{ flex: 1 }}>
-        <Text
-          style={styles.optionTitle}
-        >
+        <Text style={styles.optionTitle}>
           {title}
         </Text>
 
         {value ? (
-          <Text
-            style={
-              styles.optionValue
-            }
-          >
+          <Text style={styles.optionValue}>
             {value}
           </Text>
         ) : null}
       </View>
 
-      <Text
-        style={styles.optionArrow}
-      >
+      <Text style={styles.optionArrow}>
         ›
       </Text>
     </Pressable>
@@ -2200,24 +2127,18 @@ function OptionButton({
 function EarnScreen({ wallet }) {
   return (
     <ScrollView
-      contentContainerStyle={
-        styles.scroll
-      }
+      contentContainerStyle={styles.scroll}
     >
       <Text style={styles.heading}>
         Earn
       </Text>
 
-      <Text
-        style={styles.subtitleText}
-      >
+      <Text style={styles.subtitleText}>
         Creator rewards and brand opportunities.
       </Text>
 
       <View style={styles.walletCard}>
-        <Text
-          style={styles.walletLabel}
-        >
+        <Text style={styles.walletLabel}>
           Available Balance
         </Text>
 
@@ -2225,9 +2146,7 @@ function EarnScreen({ wallet }) {
           ₹{wallet}
         </Text>
 
-        <Text
-          style={styles.walletSubtitle}
-        >
+        <Text style={styles.walletSubtitle}>
           Creator earnings + rewards
         </Text>
 
@@ -2241,9 +2160,7 @@ function EarnScreen({ wallet }) {
           }
         >
           <Text
-            style={
-              styles.withdrawButtonText
-            }
+            style={styles.withdrawButtonText}
           >
             Withdraw Money
           </Text>
@@ -2255,454 +2172,447 @@ function EarnScreen({ wallet }) {
       </Text>
 
       {[
-        [
-          "VoltGo",
-          "Create a 30-sec EV video",
-          "₹1,000",
-          COLORS.purple,
-        ],
-        [
-          "FoodBee",
-          "Food Video Challenge",
-          "₹500",
-          "#FF9F43",
-        ],
-      ].map(
-        ([
-          brand,
-          title,
-          amount,
-          color,
-        ]) => (
+        {
+          brand: "VoltGo",
+          title: "Create a 30-sec EV video",
+          amount: "₹1,000",
+          color: COLORS.purple,
+        },
+        {
+          brand: "FoodBee",
+          title: "Food Video Challenge",
+          amount: "₹500",
+          color: "#FF9F43",
+        },
+      ].map((task) => (
+        <View
+          key={task.brand}
+          style={styles.taskCard}
+        >
           <View
-            key={brand}
-            style={styles.taskCard}
+            style={[
+              styles.taskLogo,
+              {
+                backgroundColor:
+                  task.color,
+              },
+            ]}
           >
-            <View
-              style={[
-                styles.taskLogo,
-                {
-                  backgroundColor:
-                    color,
-                },
-              ]}
-            >
-              <Text
-                style={
-                  styles.taskLogoText
-                }
-              >
-                {brand[0]}
-              </Text>
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text
-                style={
-                  styles.taskBrand
-                }
-              >
-                {brand}
-              </Text>
-
-              <Text
-                style={
-                  styles.taskTitle
-                }
-              >
-                {title}
-              </Text>
-            </View>
-
-            <View
-              style={{
-                alignItems:
-                  "flex-end",
-              }}
-            >
-              <Text
-                style={
-                  styles.taskAmount
-                }
-              >
-                {amount}
-              </Text>
-
-              <Pressable
-                style={
-                  styles.applyButton
-                }
-                onPress={() =>
-                  Alert.alert(
-                    "Applied ✅",
-                    title
-                  )
-                }
-              >
-                <Text
-                  style={
-                    styles.applyButtonText
-                  }
-                >
-                  Apply
-                </Text>
-              </Pressable>
-            </View>
+            <Text style={styles.taskLogoText}>
+              {task.brand[0]}
+            </Text>
           </View>
-        )
-      )}
+
+          <View style={{ flex: 1 }}>
+            <Text style={styles.taskBrand}>
+              {task.brand}
+            </Text>
+
+            <Text style={styles.taskTitle}>
+              {task.title}
+            </Text>
+          </View>
+
+          <View
+            style={{ alignItems: "flex-end" }}
+          >
+            <Text style={styles.taskAmount}>
+              {task.amount}
+            </Text>
+
+            <Pressable
+              style={styles.applyButton}
+              onPress={() =>
+                Alert.alert(
+                  "Applied ✅",
+                  task.title
+                )
+              }
+            >
+              <Text
+                style={styles.applyButtonText}
+              >
+                Apply
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      ))}
     </ScrollView>
   );
 }
 
 function ProfileScreen({
   name,
+  username,
   profilePhoto,
   setProfilePhoto,
-  username,
   wallet,
   createdPosts,
-  setPosts,
   setCreatedPosts,
+  setPosts,
   onEdit,
   onLogout,
 }) {
-  const [editPost, setEditPost] = useState(null);
-  const [editCaption, setEditCaption] = useState("");
-  const changeProfilePhoto = async () => {
-  const permission =
-    await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const [editPost, setEditPost] =
+    useState(null);
 
-  if (!permission.granted) {
-    Alert.alert(
-      "Permission Required",
-      "Please allow photo access."
-    );
-    return;
+  const [editCaption, setEditCaption] =
+    useState("");
+
+  async function changeProfilePhoto() {
+    const permission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission Required",
+        "Please allow photo access."
+      );
+
+      return;
+    }
+
+    const result =
+      await ImagePicker.launchImageLibraryAsync(
+        {
+          mediaTypes: ["images"],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.9,
+        }
+      );
+
+    if (
+      !result.canceled &&
+      result.assets?.[0]
+    ) {
+      setProfilePhoto(
+        result.assets[0].uri
+      );
+    }
   }
 
-  const result =
-    await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.9,
-    });
+  function saveEditedPost() {
+    const text = editCaption.trim();
 
-  if (!result.canceled && result.assets?.[0]) {
-    setProfilePhoto(result.assets[0].uri);
-  }
-};
-  return (
-    <Modal
-  visible={!!editPost}
-  transparent
-  animationType="slide"
-  onRequestClose={() => setEditPost(null)}
->
-  <KeyboardAvoidingView
-    style={styles.modalBackground}
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-  >
-    <View style={styles.bottomSheet}>
-      <View style={styles.sheetHandle} />
+    if (!text || !editPost) {
+      return;
+    }
 
-      <View style={styles.modalHeader}>
-        <Text style={styles.modalTitle}>Edit Caption</Text>
-
-        <Pressable onPress={() => setEditPost(null)}>
-          <Text style={styles.closeText}>✕</Text>
-        </Pressable>
-      </View>
-
-      <TextInput
-        style={styles.captionInput}
-        multiline
-        value={editCaption}
-        onChangeText={setEditCaption}
-        placeholder="Update caption"
-      />
-
-      <Pressable
-        style={styles.primaryButton}
-        onPress={() => {
-          const text = editCaption.trim();
-
-          if (!text || !editPost) return;
-
-          setCreatedPosts((oldPosts) =>
-            oldPosts.map((item) =>
-              item.id === editPost.id
-                ? { ...item, title: text }
-                : item
-            )
-          );
-
-          setPosts((oldPosts) =>
-            oldPosts.map((item) =>
-              item.id === editPost.id
-                ? { ...item, title: text }
-                : item
-            )
-          );
-
-          setEditPost(null);
-          setEditCaption("");
-        }}
-      >
-        <Text style={styles.primaryButtonText}>
-          Save Changes
-        </Text>
-      </Pressable>
-    </View>
-  </KeyboardAvoidingView>
-</Modal>
-    <ScrollView
-      contentContainerStyle={
-        styles.scroll
-      }
-    >
-      <View style={styles.profileHero}>
-        <Pressable
-  style={styles.profileAvatar}
-  onPress={changeProfilePhoto}
->
-  {profilePhoto ? (
-    <Image
-      source={{ uri: profilePhoto }}
-      style={{
-        width: "100%",
-        height: "100%",
-        borderRadius: 30,
-      }}
-    />
-  ) : (
-    <Text style={styles.profileAvatarText}>
-      {(name || "S")[0].toUpperCase()}
-    </Text>
-  )}
-</Pressable>
-
-        <Text
-          style={styles.profileName}
-        >
-          {name || "Creator"}
-        </Text>
-
-        <Text
-          style={styles.profileHandle}
-        >
-          @{username || "creator"}
-        </Text>
-      </View>
-
-      <View style={styles.statsCard}>
-        <Stat
-          number={createdPosts.length}
-          title="Posts"
-        />
-
-        <Stat
-          number="12.8K"
-          title="Followers"
-        />
-
-        <Stat
-          number="438"
-          title="Following"
-        />
-
-        <Stat
-          number={`₹${wallet}`}
-          title="Earnings"
-        />
-      </View>
-
-      <Pressable
-        style={styles.editButton}
-        onPress={onEdit}
-      >
-        <Text
-          style={styles.editButtonText}
-        >
-          ✎ Edit Profile
-        </Text>
-      </Pressable>
-
-      <Text style={styles.subHeading}>
-        Your Posts
-      </Text>
-
-      {createdPosts.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text
-            style={{ fontSize: 34 }}
-          >
-            +
-          </Text>
-
-          <Text
-            style={styles.creatorName}
-          >
-            No posts yet
-          </Text>
-
-          <Text
-            style={styles.smallText}
-          >
-            Create your first post from the Create tab.
-          </Text>
-        </View>
-      ) : (
-        createdPosts.map((post) => (
-          <View
-            key={post.id}
-            style={
-              styles.profilePost
+    setCreatedPosts((oldPosts) =>
+      oldPosts.map((item) =>
+        item.id === editPost.id
+          ? {
+              ...item,
+              title: text,
             }
+          : item
+      )
+    );
+
+    setPosts((oldPosts) =>
+      oldPosts.map((item) =>
+        item.id === editPost.id
+          ? {
+              ...item,
+              title: text,
+            }
+          : item
+      )
+    );
+
+    setEditPost(null);
+    setEditCaption("");
+  }
+
+  function deletePost(post) {
+    Alert.alert(
+      "Delete Post",
+      "Are you sure you want to delete this post?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            setCreatedPosts(
+              (oldPosts) =>
+                oldPosts.filter(
+                  (item) =>
+                    item.id !== post.id
+                )
+            );
+
+            setPosts((oldPosts) =>
+              oldPosts.filter(
+                (item) =>
+                  item.id !== post.id
+              )
+            );
+          },
+        },
+      ]
+    );
+  }
+
+  return (
+    <>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+      >
+        <View style={styles.profileHero}>
+          <Pressable
+            style={styles.profileAvatar}
+            onPress={changeProfilePhoto}
           >
-            {post.mediaType ===
-            "photo" ? (
+            {profilePhoto ? (
               <Image
                 source={{
-                  uri: post.mediaUri,
+                  uri: profilePhoto,
                 }}
                 style={
-                  styles.profileThumbnail
+                  styles.profileAvatarImage
                 }
               />
             ) : (
-              <View
+              <Text
                 style={
-                  styles.profileVideoThumbnail
+                  styles.profileAvatarText
                 }
               >
-                <Text
-                  style={{
-                    fontSize: 22,
-                  }}
-                >
-                  ▶
-                </Text>
-              </View>
+                {(name || "S")[0].toUpperCase()}
+              </Text>
             )}
+          </Pressable>
 
-            <View style={{ flex: 1 }}>
-              <Text
-                style={
-                  styles.profilePostTitle
-                }
-              >
-                {post.title}
-              </Text>
-                  <View
-  style={{
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 8,
-  }}
->
- <Pressable
-  onPress={() => {
-    setEditPost(post);
-    setEditCaption(post.title);
-  }}
->
-  <Text
-    style={{
-      color: COLORS.blue,
-      fontWeight: "900",
-    }}
-  >
-    Edit
-  </Text>
-</Pressable>
-  <Pressable
-    onPress={() =>
-      Alert.alert(
-        "Delete Post",
-        "Are you sure you want to delete this post?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: () => {
-              setCreatedPosts((oldPosts) =>
-                oldPosts.filter(
-                  (item) => item.id !== post.id
-                )
-              );
+          <Text style={styles.profileName}>
+            {name || "Creator"}
+          </Text>
 
-              setPosts((oldPosts) =>
-                oldPosts.filter(
-                  (item) => item.id !== post.id
-                )
-              );
-            },
-          },
-        ]
-      )
-    }
-  >
-    <Text
-      style={{
-        color: "#D94467",
-        fontWeight: "900",
-      }}
-    >
-      Delete
-    </Text>
-  </Pressable>
-</View>
+          <Text style={styles.profileHandle}>
+            @{username || "creator"}
+          </Text>
 
-              <Text
-                style={
-                  styles.smallText
-                }
-              >
-                {post.mediaType ===
-                "short"
-                  ? "Short / Reel"
-                  : post.mediaType ===
-                    "long"
-                  ? "Long Video"
-                  : "Photo"}
-              </Text>
-            </View>
-          </View>
-        ))
-      )}
+          <Text style={styles.tapPhotoText}>
+            Tap photo to change
+          </Text>
+        </View>
 
-      <Pressable
-        style={styles.logoutButton}
-        onPress={onLogout}
-      >
-        <Text
-          style={styles.logoutText}
+        <View style={styles.statsCard}>
+          <Stat
+            number={createdPosts.length}
+            title="Posts"
+          />
+
+          <Stat
+            number="12.8K"
+            title="Followers"
+          />
+
+          <Stat
+            number="438"
+            title="Following"
+          />
+
+          <Stat
+            number={`₹${wallet}`}
+            title="Earnings"
+          />
+        </View>
+
+        <Pressable
+          style={styles.editButton}
+          onPress={onEdit}
         >
-          Logout
+          <Text style={styles.editButtonText}>
+            ✎ Edit Profile
+          </Text>
+        </Pressable>
+
+        <Text style={styles.subHeading}>
+          Your Posts
         </Text>
-      </Pressable>
-    </ScrollView>
+
+        {createdPosts.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={{ fontSize: 34 }}>
+              +
+            </Text>
+
+            <Text style={styles.creatorName}>
+              No posts yet
+            </Text>
+
+            <Text style={styles.smallText}>
+              Create your first post from the Create tab.
+            </Text>
+          </View>
+        ) : (
+          createdPosts.map((post) => (
+            <View
+              key={post.id}
+              style={styles.profilePost}
+            >
+              {post.mediaType ===
+              "photo" ? (
+                <Image
+                  source={{
+                    uri: post.mediaUri,
+                  }}
+                  style={
+                    styles.profileThumbnail
+                  }
+                />
+              ) : (
+                <View
+                  style={
+                    styles.profileVideoThumbnail
+                  }
+                >
+                  <Text
+                    style={{ fontSize: 22 }}
+                  >
+                    ▶
+                  </Text>
+                </View>
+              )}
+
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={
+                    styles.profilePostTitle
+                  }
+                >
+                  {post.title}
+                </Text>
+
+                <Text style={styles.smallText}>
+                  {post.mediaType === "short"
+                    ? "Short / Reel"
+                    : post.mediaType === "long"
+                    ? "Long Video"
+                    : "Photo"}
+                </Text>
+
+                <View
+                  style={styles.postEditRow}
+                >
+                  <Pressable
+                    onPress={() => {
+                      setEditPost(post);
+                      setEditCaption(
+                        post.title
+                      );
+                    }}
+                  >
+                    <Text
+                      style={styles.editPostText}
+                    >
+                      Edit
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() =>
+                      deletePost(post)
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.deletePostText
+                      }
+                    >
+                      Delete
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          ))
+        )}
+
+        <Pressable
+          style={styles.logoutButton}
+          onPress={onLogout}
+        >
+          <Text style={styles.logoutText}>
+            Logout
+          </Text>
+        </Pressable>
+      </ScrollView>
+
+      <Modal
+        visible={!!editPost}
+        transparent
+        animationType="slide"
+        onRequestClose={() =>
+          setEditPost(null)
+        }
+      >
+        <KeyboardAvoidingView
+          style={styles.modalBackground}
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : "height"
+          }
+        >
+          <View style={styles.bottomSheet}>
+            <View style={styles.sheetHandle} />
+
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Edit Caption
+              </Text>
+
+              <Pressable
+                onPress={() =>
+                  setEditPost(null)
+                }
+              >
+                <Text style={styles.closeText}>
+                  ✕
+                </Text>
+              </Pressable>
+            </View>
+
+            <TextInput
+              style={styles.captionInput}
+              multiline
+              value={editCaption}
+              onChangeText={setEditCaption}
+              placeholder="Update caption"
+            />
+
+            <Pressable
+              style={styles.primaryButton}
+              onPress={saveEditedPost}
+            >
+              <Text
+                style={styles.primaryButtonText}
+              >
+                Save Changes
+              </Text>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </>
   );
 }
 
 function Stat({ number, title }) {
   return (
     <View style={styles.stat}>
-      <Text
-        style={styles.statNumber}
-      >
+      <Text style={styles.statNumber}>
         {number}
       </Text>
 
-      <Text
-        style={styles.statTitle}
-      >
+      <Text style={styles.statTitle}>
         {title}
       </Text>
     </View>
@@ -2710,12 +2620,16 @@ function Stat({ number, title }) {
 }
 
 function formatNumber(number) {
+  if (number >= 1000000) {
+    return `${(
+      number / 1000000
+    ).toFixed(1)}M`;
+  }
+
   if (number >= 1000) {
     return `${(
       number / 1000
-    ).toFixed(
-      number >= 10000 ? 0 : 1
-    )}K`;
+    ).toFixed(1)}K`;
   }
 
   return String(number);
@@ -2733,177 +2647,198 @@ const styles = StyleSheet.create({
 
   safeWhite: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    paddingTop:
-      Platform.OS === "android"
-        ? StatusBar.currentHeight
-        : 0,
+    backgroundColor: COLORS.white,
   },
 
   authContainer: {
     flex: 1,
+    padding: 24,
     justifyContent: "center",
-    paddingHorizontal: 24,
-    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    backgroundColor: COLORS.bg,
   },
 
   brandLogo: {
-    width: 70,
-    height: 70,
+    width: 74,
+    height: 74,
     borderRadius: 24,
     backgroundColor: COLORS.purple,
-    alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
   },
 
   brandLogoText: {
-    color: "#FFFFFF",
-    fontSize: 36,
+    color: COLORS.white,
     fontWeight: "900",
+    fontSize: 38,
   },
 
   brandTitle: {
-    textAlign: "center",
-    fontSize: 38,
+    marginTop: 14,
+    fontSize: 32,
     fontWeight: "900",
     color: COLORS.text,
   },
 
   brandTagline: {
-    textAlign: "center",
     color: COLORS.gray,
     marginTop: 4,
-    marginBottom: 26,
+    marginBottom: 24,
   },
 
   authCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
+    width: "100%",
+    backgroundColor: COLORS.white,
     padding: 20,
-    borderWidth: 1,
-    borderColor: COLORS.line,
+    borderRadius: 22,
     elevation: 3,
   },
 
   authTitle: {
-    fontSize: 25,
+    fontSize: 23,
     fontWeight: "900",
     color: COLORS.text,
   },
 
   authSubtitle: {
-    color: COLORS.gray,
     marginTop: 5,
-    marginBottom: 16,
+    marginBottom: 18,
+    color: COLORS.gray,
   },
 
   input: {
-    height: 55,
     borderWidth: 1,
     borderColor: COLORS.line,
-    borderRadius: 15,
-    paddingHorizontal: 15,
-    backgroundColor: "#FAFAFD",
-    color: COLORS.text,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    backgroundColor: COLORS.white,
+    fontSize: 15,
   },
 
   primaryButton: {
-    height: 55,
+    marginTop: 18,
     backgroundColor: COLORS.purple,
-    borderRadius: 16,
-    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 14,
     alignItems: "center",
-    marginTop: 16,
   },
 
   primaryButtonText: {
-    color: "#FFFFFF",
+    color: COLORS.white,
     fontWeight: "900",
-    fontSize: 16,
+    fontSize: 15,
   },
 
   noteText: {
+    marginTop: 12,
     textAlign: "center",
     color: COLORS.gray,
-    marginTop: 14,
+    fontSize: 12,
   },
 
   header: {
     minHeight: 78,
-    paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.line,
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    paddingBottom: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.line,
   },
 
   headerBrand: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    flex: 1,
   },
 
   smallLogo: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     backgroundColor: COLORS.purple,
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 9,
   },
 
   smallLogoText: {
-    color: "#FFFFFF",
+    color: COLORS.white,
     fontWeight: "900",
-    fontSize: 20,
+    fontSize: 23,
   },
 
   logoText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "900",
     color: COLORS.text,
   },
 
   smallText: {
+    fontSize: 12,
     color: COLORS.gray,
-    fontSize: 11,
-    marginTop: 2,
   },
 
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 9,
+  },
+
+  notificationButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#FFF1F5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 5,
+  },
+
+  searchButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: COLORS.softPurple,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 5,
   },
 
   walletPill: {
-    backgroundColor:
-      COLORS.softPurple,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
+    marginLeft: 5,
+    backgroundColor: "#EDFFF6",
+    paddingHorizontal: 9,
+    paddingVertical: 9,
+    borderRadius: 12,
   },
 
   walletPillText: {
-    color: COLORS.purple,
+    color: COLORS.green,
     fontWeight: "900",
   },
 
   avatar: {
+    marginLeft: 5,
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: COLORS.pink,
+    backgroundColor: COLORS.purple,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+
+  headerAvatarImage: {
+    width: "100%",
+    height: "100%",
   },
 
   avatarText: {
-    color: "#FFFFFF",
+    color: COLORS.white,
     fontWeight: "900",
   },
 
@@ -2912,8 +2847,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingTop: 6,
+    backgroundColor: COLORS.white,
     paddingBottom:
       Platform.OS === "android"
         ? 30
@@ -2923,13 +2857,13 @@ const styles = StyleSheet.create({
   },
 
   navItem: {
+    flex: 1,
     alignItems: "center",
-    minWidth: 58,
   },
 
   navIconBox: {
-    width: 35,
-    height: 35,
+    width: 38,
+    height: 33,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
@@ -2940,98 +2874,94 @@ const styles = StyleSheet.create({
   },
 
   navIcon: {
-    color: COLORS.text,
     fontWeight: "900",
-    fontSize: 18,
+    color: COLORS.gray,
+    fontSize: 17,
   },
 
   navText: {
-    color: COLORS.gray,
     fontSize: 10,
-    marginTop: 3,
+    marginTop: 4,
+    color: COLORS.gray,
     fontWeight: "700",
   },
 
   scroll: {
     padding: 16,
-    paddingBottom: 28,
+    paddingBottom: 32,
   },
 
   heroCard: {
     backgroundColor: COLORS.purple,
-    borderRadius: 24,
     padding: 20,
-    marginBottom: 20,
+    borderRadius: 22,
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    marginBottom: 22,
   },
 
   heroTopText: {
-    color: "#DDD5FF",
+    color: "#DCD3FF",
     fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 1,
+    fontWeight: "800",
   },
 
   heroTitle: {
-    color: "#FFFFFF",
+    color: COLORS.white,
     fontSize: 24,
     fontWeight: "900",
     marginTop: 6,
   },
 
   heroSubtitle: {
-    color: "#EAE5FF",
-    marginTop: 5,
+    color: "#EEE9FF",
+    marginTop: 6,
   },
 
   heroCoin: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 55,
+    height: 55,
+    borderRadius: 28,
     backgroundColor: "#FFFFFF22",
     alignItems: "center",
     justifyContent: "center",
   },
 
   heroCoinText: {
-    color: "#FFFFFF",
-    fontSize: 30,
+    color: COLORS.white,
+    fontSize: 28,
     fontWeight: "900",
   },
 
   heading: {
-    fontSize: 25,
+    fontSize: 24,
     fontWeight: "900",
     color: COLORS.text,
     marginBottom: 10,
   },
 
   subHeading: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "900",
     color: COLORS.text,
-    marginVertical: 12,
+    marginTop: 20,
+    marginBottom: 12,
   },
 
   subtitleText: {
     color: COLORS.gray,
-    marginTop: -4,
-    marginBottom: 16,
+    marginBottom: 18,
   },
 
   filters: {
     flexDirection: "row",
-    gap: 8,
-    paddingRight: 10,
   },
 
   filterButton: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     paddingVertical: 9,
-    borderRadius: 999,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    backgroundColor: COLORS.white,
+    marginRight: 8,
     borderWidth: 1,
     borderColor: COLORS.line,
   },
@@ -3047,166 +2977,143 @@ const styles = StyleSheet.create({
   },
 
   postCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 14,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.line,
+    padding: 14,
   },
 
   postHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    marginBottom: 12,
   },
 
   creatorAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: "#ECF5FF",
+    width: 43,
+    height: 43,
+    borderRadius: 22,
+    backgroundColor: COLORS.softPurple,
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 10,
   },
 
   creatorAvatarText: {
-    color: COLORS.blue,
+    color: COLORS.purple,
     fontWeight: "900",
-    fontSize: 17,
+    fontSize: 18,
   },
 
   creatorName: {
     color: COLORS.text,
     fontWeight: "900",
-    fontSize: 15,
   },
 
   followButton: {
     backgroundColor: COLORS.purple,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 12,
   },
 
   followingButton: {
-    backgroundColor:
-      COLORS.softPurple,
+    backgroundColor: COLORS.softPurple,
   },
 
   followButtonText: {
-    color: "#FFFFFF",
+    color: COLORS.white,
     fontWeight: "900",
     fontSize: 12,
   },
 
   demoVideo: {
-    height: 235,
-    borderRadius: 18,
-    backgroundColor:
-      COLORS.softPurple,
-    marginTop: 14,
+    height: 215,
+    backgroundColor: "#151520",
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
 
   playCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: COLORS.purple,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#FFFFFF22",
     alignItems: "center",
     justifyContent: "center",
   },
 
   playText: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    marginLeft: 3,
+    color: COLORS.white,
+    fontSize: 26,
   },
 
   demoVideoText: {
-    color: COLORS.purple,
-    fontWeight: "800",
+    color: COLORS.white,
     marginTop: 10,
-  },
-
-  imageContainer: {
-    height: 280,
-    borderRadius: 18,
-    overflow: "hidden",
-    marginTop: 14,
-    backgroundColor: "#EEEEEE",
   },
 
   postImage: {
     width: "100%",
-    height: "100%",
+    height: 260,
+    borderRadius: 16,
+    backgroundColor: "#EEE",
   },
 
   videoContainer: {
+    width: "100%",
     height: 250,
-    borderRadius: 18,
+    backgroundColor: COLORS.black,
+    borderRadius: 16,
     overflow: "hidden",
-    backgroundColor: "#000000",
-    marginTop: 14,
   },
 
   videoPlayer: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#000000",
   },
 
   postTitle: {
-    fontSize: 16,
-    fontWeight: "900",
     color: COLORS.text,
+    fontWeight: "800",
+    fontSize: 15,
     marginTop: 12,
   },
 
   actions: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    borderTopWidth: 1,
-    borderTopColor: COLORS.line,
-    marginTop: 13,
-    paddingTop: 11,
+    alignItems: "center",
+    marginTop: 14,
   },
 
   actionText: {
+    marginRight: 22,
     color: COLORS.text,
     fontWeight: "800",
-    fontSize: 13,
   },
 
   shortsScreen: {
     flex: 1,
-    backgroundColor: "#0C0C12",
-    position: "relative",
+    backgroundColor: COLORS.black,
   },
 
   shortsTabs: {
-    position: "absolute",
-    top: 14,
-    left: 0,
-    right: 0,
-    zIndex: 10,
     flexDirection: "row",
     justifyContent: "center",
-    gap: 24,
+    paddingVertical: 12,
   },
 
   shortsTabActive: {
-    color: "#FFFFFF",
+    color: COLORS.white,
     fontWeight: "900",
-    fontSize: 16,
+    marginHorizontal: 12,
   },
 
   shortsTab: {
-    color: "#A7A7B4",
+    color: "#999",
     fontWeight: "800",
-    fontSize: 16,
+    marginHorizontal: 12,
   },
 
   shortMedia: {
@@ -3214,8 +3121,8 @@ const styles = StyleSheet.create({
   },
 
   shortVideo: {
-    flex: 1,
-    backgroundColor: "#000000",
+    width: "100%",
+    height: "100%",
   },
 
   shortDemo: {
@@ -3225,128 +3132,120 @@ const styles = StyleSheet.create({
   },
 
   shortDemoIcon: {
-    color: "#FFFFFF",
-    fontSize: 48,
+    color: COLORS.white,
+    fontSize: 54,
   },
 
   shortDemoText: {
-    color: "#B4B4C0",
-    marginTop: 10,
+    color: COLORS.white,
+    marginTop: 12,
+    fontWeight: "900",
   },
 
   shortInfo: {
     position: "absolute",
     left: 16,
-    bottom: 26,
-    width: "70%",
+    bottom: 28,
+    width: "68%",
   },
 
   shortCreator: {
-    color: "#FFFFFF",
+    color: COLORS.white,
     fontWeight: "900",
     fontSize: 16,
   },
 
   shortCaption: {
-    color: "#FFFFFF",
-    marginTop: 8,
+    color: COLORS.white,
+    marginTop: 6,
   },
 
   shortActions: {
     position: "absolute",
     right: 16,
-    bottom: 36,
-    gap: 23,
+    bottom: 30,
     alignItems: "center",
   },
 
   shortActionText: {
-    color: "#FFFFFF",
-    fontWeight: "900",
+    color: COLORS.white,
     textAlign: "center",
+    fontWeight: "900",
+    marginTop: 18,
   },
 
   createGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    justifyContent: "space-between",
   },
 
   createButton: {
     width: "48%",
-    minHeight: 125,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 12,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1.5,
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    padding: 15,
+    borderWidth: 1,
+    marginBottom: 12,
   },
 
   createIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
   },
 
   createIconText: {
-    color: "#FFFFFF",
-    fontSize: 22,
+    color: COLORS.white,
+    fontSize: 18,
     fontWeight: "900",
   },
 
   createTitle: {
     color: COLORS.text,
     fontWeight: "900",
+    marginTop: 10,
   },
 
   createSubtitle: {
     color: COLORS.gray,
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 3,
   },
 
   selectedMediaCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
+    backgroundColor: COLORS.white,
     padding: 14,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-  },
-
-  selectedMediaHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    borderRadius: 18,
+    marginTop: 10,
   },
 
   selectedMediaTitle: {
     color: COLORS.text,
     fontWeight: "900",
+    marginBottom: 10,
   },
 
   readyText: {
     color: COLORS.green,
     fontWeight: "900",
+    marginTop: 8,
   },
 
   previewImage: {
     width: "100%",
-    height: 250,
+    height: 230,
     borderRadius: 14,
-    marginTop: 12,
   },
 
   selectedVideoContainer: {
-    height: 220,
+    width: "100%",
+    height: 240,
+    backgroundColor: COLORS.black,
     borderRadius: 14,
     overflow: "hidden",
-    backgroundColor: "#000000",
-    marginTop: 12,
   },
 
   selectedVideo: {
@@ -3355,431 +3254,77 @@ const styles = StyleSheet.create({
   },
 
   formCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 16,
     marginTop: 16,
-    borderWidth: 1,
-    borderColor: COLORS.line,
+    backgroundColor: COLORS.white,
+    padding: 16,
+    borderRadius: 18,
   },
 
   fieldLabel: {
-    color: COLORS.text,
     fontWeight: "900",
+    color: COLORS.text,
     marginBottom: 8,
   },
 
   captionInput: {
-    minHeight: 95,
-    backgroundColor: "#F7F7FB",
+    minHeight: 100,
+    borderWidth: 1,
+    borderColor: COLORS.line,
     borderRadius: 14,
     padding: 12,
     textAlignVertical: "top",
-    color: COLORS.text,
+    backgroundColor: COLORS.white,
   },
 
   optionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 15,
+    minHeight: 58,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.line,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
   },
 
   optionTitle: {
     color: COLORS.text,
-    fontWeight: "700",
+    fontWeight: "800",
   },
 
   optionValue: {
     color: COLORS.gray,
-    fontSize: 11,
-    marginTop: 4,
+    marginTop: 3,
+    fontSize: 12,
   },
 
   optionArrow: {
-    fontSize: 24,
+    fontSize: 25,
     color: COLORS.gray,
   },
 
   coverImage: {
     width: "100%",
-    height: 160,
+    height: 180,
     borderRadius: 14,
-    marginTop: 14,
+    marginTop: 10,
   },
 
   publishButton: {
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: COLORS.pink,
+    backgroundColor: COLORS.purple,
+    paddingVertical: 15,
+    borderRadius: 14,
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: 16,
+    marginTop: 18,
   },
 
   publishButtonText: {
-    color: "#FFFFFF",
+    color: COLORS.white,
     fontWeight: "900",
-    fontSize: 16,
-  },
-
-  walletCard: {
-    backgroundColor: COLORS.black,
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 18,
-  },
-
-  walletLabel: {
-    color: "#B7B7C4",
-    fontWeight: "700",
-  },
-
-  moneyText: {
-    color: "#FFFFFF",
-    fontSize: 38,
-    fontWeight: "900",
-    marginTop: 6,
-  },
-
-  walletSubtitle: {
-    color: "#8F8F9E",
-    marginTop: 4,
-  },
-
-  withdrawButton: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    paddingVertical: 13,
-    alignItems: "center",
-    marginTop: 18,
-  },
-
-  withdrawButtonText: {
-    color: COLORS.black,
-    fontWeight: "900",
-  },
-
-  taskCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 11,
-  },
-
-  taskLogo: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  taskLogoText: {
-    color: "#FFFFFF",
-    fontWeight: "900",
-    fontSize: 18,
-  },
-
-  taskBrand: {
-    color: COLORS.gray,
-    fontSize: 11,
-    fontWeight: "800",
-  },
-
-  taskTitle: {
-    color: COLORS.text,
-    fontWeight: "900",
-    marginTop: 2,
-  },
-
-  taskAmount: {
-    color: COLORS.green,
-    fontWeight: "900",
-  },
-
-  applyButton: {
-    backgroundColor: COLORS.purple,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 9,
-    marginTop: 7,
-  },
-
-  applyButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "900",
-    fontSize: 12,
-  },
-
-  profileHero: {
-    alignItems: "center",
-    paddingTop: 8,
-  },
-
-  profileAvatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 30,
-    backgroundColor: COLORS.pink,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  profileAvatarText: {
-    color: "#FFFFFF",
-    fontSize: 34,
-    fontWeight: "900",
-  },
-
-  profileName: {
-    color: COLORS.text,
-    fontWeight: "900",
-    fontSize: 23,
-    marginTop: 12,
-  },
-
-  profileHandle: {
-    color: COLORS.gray,
-    marginTop: 3,
-  },
-
-  statsCard: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    paddingVertical: 16,
-    marginTop: 18,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-  },
-
-  stat: {
-    flex: 1,
-    alignItems: "center",
-  },
-
-  statNumber: {
-    color: COLORS.text,
-    fontWeight: "900",
-    fontSize: 15,
-  },
-
-  statTitle: {
-    color: COLORS.gray,
-    fontSize: 10,
-    marginTop: 3,
-  },
-
-  editButton: {
-    backgroundColor: "#ECF5FF",
-    borderRadius: 14,
-    paddingVertical: 13,
-    alignItems: "center",
-    marginTop: 12,
-  },
-
-  editButtonText: {
-    color: COLORS.blue,
-    fontWeight: "900",
-  },
-
-  emptyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 28,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: COLORS.line,
-  },
-
-  profilePost: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-  },
-
-  profileThumbnail: {
-    width: 66,
-    height: 66,
-    borderRadius: 12,
-  },
-
-  profileVideoThumbnail: {
-    width: 66,
-    height: 66,
-    borderRadius: 12,
-    backgroundColor:
-      COLORS.softPurple,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  profilePostTitle: {
-    color: COLORS.text,
-    fontWeight: "900",
-  },
-
-  logoutButton: {
-    borderWidth: 1,
-    borderColor: "#F0C4CF",
-    backgroundColor: "#FFF7F9",
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 18,
-  },
-
-  logoutText: {
-    color: "#D94467",
-    fontWeight: "900",
-  },
-
-  modalBackground: {
-    flex: 1,
-    backgroundColor:
-      "rgba(12,12,18,0.45)",
-    justifyContent: "flex-end",
-  },
-
-  bottomSheet: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    paddingHorizontal: 18,
-    paddingTop: 10,
-
-    paddingBottom:
-      Platform.OS === "android"
-        ? 36
-        : 20,
-
-    maxHeight: "82%",
-  },
-
-  sheetHandle: {
-    width: 42,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "#DADBE5",
-    alignSelf: "center",
-    marginBottom: 12,
-  },
-
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: COLORS.text,
-  },
-
-  closeText: {
-    fontSize: 20,
-    color: COLORS.text,
-  },
-
-  emptyText: {
-    color: COLORS.gray,
-    paddingVertical: 20,
-    textAlign: "center",
-  },
-
-  commentRow: {
-    flexDirection: "row",
-    gap: 10,
-    paddingVertical: 9,
-  },
-
-  commentAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor:
-      COLORS.softPurple,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  commentBubble: {
-    flex: 1,
-    backgroundColor: "#F7F7FB",
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-
-  commentUser: {
-    color: COLORS.text,
-    fontWeight: "900",
-    fontSize: 12,
-  },
-
-  commentComposer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.line,
-  },
-
-  commentInput: {
-    flex: 1,
-    height: 48,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    borderRadius: 14,
-    paddingHorizontal: 13,
-    backgroundColor: "#FAFAFD",
-    color: COLORS.text,
-  },
-
-  sendButton: {
-    height: 48,
-    paddingHorizontal: 17,
-    borderRadius: 14,
-    backgroundColor: COLORS.purple,
-    justifyContent: "center",
-  },
-
-  sendButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "900",
-  },
-
-  cancelButton: {
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-
-  cancelButtonText: {
-    color: COLORS.purple,
-    fontWeight: "800",
   },
 
   liveScreen: {
     flex: 1,
-    backgroundColor: "#0D0D13",
     padding: 18,
+    backgroundColor: COLORS.black,
   },
 
   liveTop: {
@@ -3790,47 +3335,433 @@ const styles = StyleSheet.create({
 
   liveBadge: {
     backgroundColor: "#E53935",
-    color: "#FFFFFF",
-    paddingHorizontal: 11,
-    paddingVertical: 6,
+    color: COLORS.white,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 8,
     fontWeight: "900",
   },
 
   liveViewers: {
-    color: "#B5B5C0",
-    fontWeight: "700",
+    color: COLORS.white,
   },
 
   liveTitle: {
-    color: "#FFFFFF",
-    fontSize: 24,
+    color: COLORS.white,
+    fontSize: 20,
     fontWeight: "900",
-    marginTop: 16,
+    marginTop: 18,
   },
 
   liveCamera: {
     flex: 1,
+    marginVertical: 20,
+    borderRadius: 20,
+    backgroundColor: "#20202A",
     alignItems: "center",
     justifyContent: "center",
   },
 
   liveDot: {
     color: "#E53935",
-    fontSize: 48,
+    fontSize: 30,
   },
 
   liveText: {
-    color: "#C4C4CD",
-    marginTop: 12,
+    color: COLORS.white,
+    marginTop: 10,
   },
 
   endLiveButton: {
-    height: 56,
     backgroundColor: "#E53935",
-    borderRadius: 16,
+    padding: 15,
+    borderRadius: 14,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  cancelButton: {
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 8,
+  },
+
+  cancelButtonText: {
+    color: COLORS.gray,
+    fontWeight: "900",
+  },
+
+  walletCard: {
+    backgroundColor: COLORS.purple,
+    borderRadius: 22,
+    padding: 22,
+  },
+
+  walletLabel: {
+    color: "#DDD4FF",
+    fontWeight: "800",
+  },
+
+  moneyText: {
+    color: COLORS.white,
+    fontWeight: "900",
+    fontSize: 34,
+    marginTop: 6,
+  },
+
+  walletSubtitle: {
+    color: "#EAE5FF",
+    marginTop: 4,
+  },
+
+  withdrawButton: {
+    backgroundColor: COLORS.white,
+    paddingVertical: 12,
+    borderRadius: 13,
+    alignItems: "center",
+    marginTop: 18,
+  },
+
+  withdrawButtonText: {
+    color: COLORS.purple,
+    fontWeight: "900",
+  },
+
+  taskCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 17,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  taskLogo: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 18,
+    marginRight: 10,
+  },
+
+  taskLogoText: {
+    color: COLORS.white,
+    fontWeight: "900",
+    fontSize: 20,
+  },
+
+  taskBrand: {
+    color: COLORS.text,
+    fontWeight: "900",
+  },
+
+  taskTitle: {
+    color: COLORS.gray,
+    fontSize: 12,
+    marginTop: 3,
+  },
+
+  taskAmount: {
+    color: COLORS.green,
+    fontWeight: "900",
+  },
+
+  applyButton: {
+    backgroundColor: COLORS.softPurple,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    marginTop: 6,
+  },
+
+  applyButtonText: {
+    color: COLORS.purple,
+    fontWeight: "900",
+    fontSize: 12,
+  },
+
+  profileHero: {
+    alignItems: "center",
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 20,
+  },
+
+  profileAvatar: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: COLORS.softPurple,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+
+  profileAvatarImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  profileAvatarText: {
+    color: COLORS.purple,
+    fontWeight: "900",
+    fontSize: 34,
+  },
+
+  profileName: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: COLORS.text,
+    marginTop: 12,
+  },
+
+  profileHandle: {
+    color: COLORS.gray,
+    marginTop: 3,
+  },
+
+  tapPhotoText: {
+    color: COLORS.purple,
+    fontSize: 11,
+    marginTop: 5,
+  },
+
+  statsCard: {
+    flexDirection: "row",
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    marginTop: 14,
+    paddingVertical: 16,
+  },
+
+  stat: {
+    flex: 1,
+    alignItems: "center",
+  },
+
+  statNumber: {
+    color: COLORS.text,
+    fontWeight: "900",
+    fontSize: 16,
+  },
+
+  statTitle: {
+    color: COLORS.gray,
+    fontSize: 10,
+    marginTop: 3,
+  },
+
+  editButton: {
+    backgroundColor: COLORS.softPurple,
+    padding: 13,
+    borderRadius: 13,
+    alignItems: "center",
+    marginTop: 14,
+  },
+
+  editButtonText: {
+    color: COLORS.purple,
+    fontWeight: "900",
+  },
+
+  emptyCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 18,
+    alignItems: "center",
+    padding: 24,
+  },
+
+  profilePost: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 10,
+    flexDirection: "row",
+    marginBottom: 10,
+  },
+
+  profileThumbnail: {
+    width: 76,
+    height: 76,
+    borderRadius: 12,
+    marginRight: 12,
+  },
+
+  profileVideoThumbnail: {
+    width: 76,
+    height: 76,
+    borderRadius: 12,
+    marginRight: 12,
+    backgroundColor: "#E9E9EE",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  profilePostTitle: {
+    color: COLORS.text,
+    fontWeight: "900",
+    marginBottom: 5,
+  },
+
+  postEditRow: {
+    flexDirection: "row",
+    marginTop: 8,
+  },
+
+  editPostText: {
+    color: COLORS.blue,
+    fontWeight: "900",
+    marginRight: 18,
+  },
+
+  deletePostText: {
+    color: "#D94467",
+    fontWeight: "900",
+  },
+
+  logoutButton: {
+    borderWidth: 1,
+    borderColor: "#FFCBD8",
+    padding: 14,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 20,
+  },
+
+  logoutText: {
+    color: "#D94467",
+    fontWeight: "900",
+  },
+
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "#00000066",
+    justifyContent: "flex-end",
+  },
+
+  bottomSheet: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 18,
+    paddingBottom:
+      Platform.OS === "android"
+        ? 34
+        : 20,
+    maxHeight: "85%",
+  },
+
+  sheetHandle: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#D9DAE3",
+    alignSelf: "center",
+    marginBottom: 14,
+  },
+
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+
+  modalTitle: {
+    color: COLORS.text,
+    fontSize: 20,
+    fontWeight: "900",
+  },
+
+  closeText: {
+    color: COLORS.gray,
+    fontSize: 22,
+    fontWeight: "900",
+  },
+
+  searchResult: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.line,
+  },
+
+  notificationRow: {
+    flexDirection: "row",
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.line,
+  },
+
+  notificationIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: COLORS.softPurple,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+
+  emptyText: {
+    textAlign: "center",
+    color: COLORS.gray,
+    paddingVertical: 22,
+  },
+
+  commentRow: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+
+  commentAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.softPurple,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 9,
+  },
+
+  commentBubble: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    padding: 10,
+    borderRadius: 13,
+  },
+
+  commentUser: {
+    color: COLORS.text,
+    fontWeight: "900",
+    fontSize: 12,
+    marginBottom: 3,
+  },
+
+  commentComposer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+  },
+
+  commentInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: COLORS.line,
+    borderRadius: 14,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+  },
+
+  sendButton: {
+    marginLeft: 8,
+    backgroundColor: COLORS.purple,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 13,
+  },
+
+  sendButtonText: {
+    color: COLORS.white,
+    fontWeight: "900",
   },
 });
