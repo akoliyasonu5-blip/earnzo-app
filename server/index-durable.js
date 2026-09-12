@@ -58,7 +58,7 @@ app.get('/health', async (_req, res) => {
     res.json({
       ok: true,
       service: 'earnzo-backend',
-      version: '0.4.0',
+      version: '0.5.0',
       database: data.body?.database || 'supabase-postgres',
       mediaStorage: signedStorageEnabled() ? 'supabase-storage' : 'not-configured',
     });
@@ -79,6 +79,13 @@ app.post('/v1/profiles/upsert', async (req, res, next) => {
 app.get('/v1/feed', async (req, res, next) => {
   try {
     const out = await callData('feed', { userId: String(req.query.userId || '') });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.get('/v1/stories', async (_req, res, next) => {
+  try {
+    const out = await callData('stories', {});
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
@@ -137,6 +144,20 @@ app.post('/v1/follow', async (req, res, next) => {
     const followingId = String(req.body?.followingId || '').trim();
     if (!followerId || !followingId) return res.status(400).json({ error: 'followerId and followingId required' });
     const out = await callData('toggle_follow', { followerId, followingId });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.get('/v1/notifications', async (req, res, next) => {
+  try {
+    const out = await callData('notifications', { userId: String(req.query.userId || '') });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.post('/v1/notifications/read', async (req, res, next) => {
+  try {
+    const out = await callData('notifications_read', { userId: String(req.body?.userId || '') });
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
