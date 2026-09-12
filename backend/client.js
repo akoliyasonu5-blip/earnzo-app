@@ -25,7 +25,10 @@ async function request(path, options = {}, timeoutMs = 20000) {
     try { body = text ? JSON.parse(text) : null; } catch { body = text; }
     if (!response.ok) {
       const message = body?.error || body?.message || `Backend request failed (${response.status})`;
-      throw new Error(message);
+      const error = new Error(message);
+      error.status = response.status;
+      error.body = body;
+      throw error;
     }
     return body;
   } finally {
@@ -129,6 +132,18 @@ export async function recordRemoteView(postId, userId) {
 
 export async function fetchCreatorStats(creatorId) {
   return request(`/v1/creator-stats?creatorId=${encodeURIComponent(creatorId || "")}`);
+}
+
+export async function fetchMonetizationStatus(creatorId) {
+  return request(`/v1/monetization/status?creatorId=${encodeURIComponent(creatorId || "")}`);
+}
+
+export async function applyForMonetization(payload) {
+  return request("/v1/monetization/apply", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
+  });
 }
 
 export async function toggleLike(postId, userId) {
