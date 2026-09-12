@@ -67,7 +67,7 @@ app.get('/health', async (_req, res) => {
     res.json({
       ok: true,
       service: 'earnzo-backend',
-      version: '0.7.1',
+      version: '0.8.0',
       database: data.body?.database || 'supabase-postgres',
       mediaStorage: signedStorageEnabled() ? 'supabase-storage' : 'not-configured',
       monetizationService: MONETIZATION_URL ? 'configured' : 'not-configured',
@@ -121,6 +121,25 @@ app.post('/v1/monetization/apply', async (req, res, next) => {
     const creatorId = String(req.body?.creatorId || '').trim();
     if (!creatorId) return res.status(400).json({ error: 'creatorId required' });
     const out = await callMonetization('apply', req.body || {});
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.get('/v1/wallet', async (req, res, next) => {
+  try {
+    const creatorId = String(req.query.creatorId || '').trim();
+    const currencyCode = String(req.query.currencyCode || '').trim();
+    if (!creatorId) return res.status(400).json({ error: 'creatorId required' });
+    const out = await callMonetization('wallet', { creatorId, currencyCode });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.post('/v1/payouts/request', async (req, res, next) => {
+  try {
+    const creatorId = String(req.body?.creatorId || '').trim();
+    if (!creatorId) return res.status(400).json({ error: 'creatorId required' });
+    const out = await callMonetization('request_payout', req.body || {});
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
