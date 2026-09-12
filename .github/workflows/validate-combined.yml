@@ -45,7 +45,7 @@ jobs:
           node scripts/patch-saved-content.js
           node scripts/patch-own-content-management.js
           node scripts/patch-priority-experience.js
-          node scripts/patch-global-language-region.js
+          node scripts/patch-global-language-region-v2.js
           node scripts/patch-creator-stats-views.js
           node scripts/patch-monetization-application.js
 
