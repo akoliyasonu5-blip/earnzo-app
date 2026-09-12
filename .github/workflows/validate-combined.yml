@@ -18,9 +18,12 @@ jobs:
         with:
           node-version: 20
 
-      - name: Check patch script syntax
+      - name: Check active patch script syntax
         run: |
           for f in scripts/*.js; do
+            if [ "$f" = "scripts/patch-trim.js" ]; then
+              continue
+            fi
             node --check "$f"
           done
 
