@@ -75,6 +75,20 @@ export async function createPost(post) {
   });
 }
 
+export async function updateRemotePost(postId, changes) {
+  return request(`/v1/posts/${encodeURIComponent(postId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(changes || {}),
+  });
+}
+
+export async function deleteRemotePost(postId) {
+  return request(`/v1/posts/${encodeURIComponent(postId)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function syncPostToBackend(post, mediaUri, coverUri) {
   if (!backendEnabled) return null;
   const mediaKind = post.mediaType === "photo" ? "image" : "video";
