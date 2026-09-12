@@ -83,6 +83,7 @@ export default function App() {
 
   const [name, setName] = useState("");
   const [profilePhoto, setProfilePhoto] = useState("");
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [username, setUsername] = useState("");
 
   const [tab, setTab] = useState("Home");
@@ -96,6 +97,9 @@ export default function App() {
   const [commentText, setCommentText] = useState("");
 
   const [editProfile, setEditProfile] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const [editName, setEditName] = useState("");
   const [editUsername, setEditUsername] = useState("");
 
@@ -117,12 +121,15 @@ useEffect(() => {
       }
     } catch (error) {
       console.log("Data load error:", error);
+    } finally {
+      setDataLoaded(true);
     }
   };
 
   loadSavedData();
 }, []);
   useEffect(() => {
+    if (!dataLoaded) return;
   const saveData = async () => {
     try {
       const data = {
@@ -144,7 +151,7 @@ useEffect(() => {
   };
 
   saveData();
-}, [name, username, profilePhoto, posts, createdPosts, stage]);
+}, [dataLoaded, name, username, profilePhoto, posts, createdPosts, stage]);
   if (stage === "login") {
     return (
       <AuthScreen
@@ -299,6 +306,7 @@ useEffect(() => {
   await AsyncStorage.removeItem("earnzoData");
 
   setName("");
+  setProfilePhoto("");
   setUsername("");
   setMobile("");
   setOtp("");
@@ -370,6 +378,48 @@ useEffect(() => {
         </View>
 
         <View style={styles.headerRight}>
+        <Pressable
+  style={{
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#FFF1F5",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+  onPress={() => setNotificationOpen(true)}
+>
+  <Text
+    style={{
+      fontSize: 18,
+      color: COLORS.pink,
+      fontWeight: "900",
+    }}
+  >
+    🔔
+  </Text>
+</Pressable>  
+          <Pressable
+  style={{
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#F1EEFF",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+  onPress={() => setSearchOpen(true)}
+>
+  <Text
+    style={{
+      fontSize: 18,
+      color: COLORS.purple,
+      fontWeight: "900",
+    }}
+  >
+    🔍
+  </Text>
+</Pressable>
           <View style={styles.walletPill}>
             <Text style={styles.walletPillText}>
               ₹{wallet}
@@ -438,120 +488,300 @@ useEffect(() => {
       </View>
 
       <Modal
-        visible={!!commentPost}
-        transparent
-        animationType="slide"
-        onRequestClose={() =>
-          setCommentPost(null)
-        }
-      >
-        <KeyboardAvoidingView
-          style={styles.modalBackground}
-          behavior={
-            Platform.OS === "ios"
-              ? "padding"
-              : "height"
-          }
-        >
-          <View style={styles.bottomSheet}>
-            <View style={styles.sheetHandle} />
+{/* SEARCH MODAL */}
+<Modal
+  visible={searchOpen}
+  transparent
+  animationType="slide"
+  onRequestClose={() => setSearchOpen(false)}
+>
+  <KeyboardAvoidingView
+    style={styles.modalBackground}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+  >
+    <View style={styles.bottomSheet}>
+      <View style={styles.sheetHandle} />
 
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                Comments
+      <View style={styles.modalHeader}>
+        <Text style={styles.modalTitle}>Search</Text>
+
+        <Pressable onPress={() => setSearchOpen(false)}>
+          <Text style={styles.closeText}>✕</Text>
+        </Pressable>
+      </View>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Search creator or post..."
+        value={searchText}
+        onChangeText={setSearchText}
+      />
+
+      <ScrollView
+        style={{ maxHeight: 350, marginTop: 14 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {posts
+          .filter((post) => {
+            const q = searchText.trim().toLowerCase();
+
+            if (!q) return false;
+
+            return (
+              post.name?.toLowerCase().includes(q) ||
+              post.handle?.toLowerCase().includes(q) ||
+              post.title?.toLowerCase().includes(q)
+            );
+          })
+          .map((post) => (
+            <Pressable
+              key={post.id}
+              style={{
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: COLORS.line,
+              }}
+              onPress={() => {
+                setSearchOpen(false);
+                setSearchText("");
+                setTab("Home");
+              }}
+            >
+              <Text
+                style={{
+                  fontWeight: "900",
+                  color: COLORS.text,
+                }}
+              >
+                {post.name}
               </Text>
 
-              <Pressable
-                onPress={() =>
-                  setCommentPost(null)
-                }
+              <Text
+                style={{
+                  color: COLORS.gray,
+                  marginTop: 3,
+                }}
               >
-                <Text style={styles.closeText}>
-                  ✕
-                </Text>
-              </Pressable>
+                {post.handle}
+              </Text>
+
+              <Text
+                style={{
+                  color: COLORS.text,
+                  marginTop: 6,
+                }}
+              >
+                {post.title}
+              </Text>
+            </Pressable>
+          ))}
+
+        {searchText.trim() &&
+        posts.filter((post) => {
+          const q = searchText.trim().toLowerCase();
+
+          return (
+            post.name?.toLowerCase().includes(q) ||
+            post.handle?.toLowerCase().includes(q) ||
+            post.title?.toLowerCase().includes(q)
+          );
+        }).length === 0 ? (
+          <Text style={styles.emptyText}>
+            No results found
+          </Text>
+        ) : null}
+      </ScrollView>
+    </View>
+  </KeyboardAvoidingView>
+</Modal>
+
+{/* NOTIFICATION MODAL */}
+<Modal
+  visible={notificationOpen}
+  transparent
+  animationType="slide"
+  onRequestClose={() => setNotificationOpen(false)}
+>
+  <View style={styles.modalBackground}>
+    <View style={styles.bottomSheet}>
+      <View style={styles.sheetHandle} />
+
+      <View style={styles.modalHeader}>
+        <Text style={styles.modalTitle}>Notifications</Text>
+
+        <Pressable onPress={() => setNotificationOpen(false)}>
+          <Text style={styles.closeText}>✕</Text>
+        </Pressable>
+      </View>
+
+      <ScrollView style={{ maxHeight: 380 }}>
+        {[
+          {
+            icon: "❤️",
+            title: "New Like",
+            text: "Ravi liked your video.",
+            time: "2 min ago",
+          },
+          {
+            icon: "💬",
+            title: "New Comment",
+            text: "Neha commented on your post.",
+            time: "10 min ago",
+          },
+          {
+            icon: "👤",
+            title: "New Follower",
+            text: "Aman started following you.",
+            time: "1 hour ago",
+          },
+          {
+            icon: "₹",
+            title: "Earnings",
+            text: "₹120 added to your creator wallet.",
+            time: "Today",
+          },
+        ].map((item, index) => (
+          <View
+            key={index}
+            style={{
+              flexDirection: "row",
+              gap: 12,
+              paddingVertical: 13,
+              borderBottomWidth: 1,
+              borderBottomColor: COLORS.line,
+            }}
+          >
+            <View
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 14,
+                backgroundColor: COLORS.softPurple,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontSize: 20 }}>
+                {item.icon}
+              </Text>
             </View>
 
-            <ScrollView
-              style={{ maxHeight: 300 }}
-              keyboardShouldPersistTaps="handled"
-            >
-              {(commentPost?.comments || [])
-                .length === 0 ? (
-                <Text style={styles.emptyText}>
-                  No comments yet 😊
-                </Text>
-              ) : (
-                (
-                  commentPost?.comments || []
-                ).map((comment, index) => (
-                  <View
-                    key={`${comment}-${index}`}
-                    style={styles.commentRow}
-                  >
-                    <View
-                      style={
-                        styles.commentAvatar
-                      }
-                    >
-                      <Text
-                        style={{
-                          color:
-                            COLORS.purple,
-                          fontWeight: "900",
-                        }}
-                      >
-                        U
-                      </Text>
-                    </View>
-
-                    <View
-                      style={
-                        styles.commentBubble
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.commentUser
-                        }
-                      >
-                        User
-                      </Text>
-
-                      <Text>
-                        {comment}
-                      </Text>
-                    </View>
-                  </View>
-                ))
-              )}
-            </ScrollView>
-
-            <View style={styles.commentComposer}>
-              <TextInput
-                style={styles.commentInput}
-                placeholder="Write a comment..."
-                value={commentText}
-                onChangeText={setCommentText}
-                onSubmitEditing={sendComment}
-              />
-
-              <Pressable
-                style={styles.sendButton}
-                onPress={sendComment}
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontWeight: "900",
+                  color: COLORS.text,
+                }}
               >
-                <Text
-                  style={
-                    styles.sendButtonText
-                  }
-                >
-                  Send
-                </Text>
-              </Pressable>
+                {item.title}
+              </Text>
+
+              <Text
+                style={{
+                  color: COLORS.text,
+                  marginTop: 3,
+                }}
+              >
+                {item.text}
+              </Text>
+
+              <Text
+                style={{
+                  color: COLORS.gray,
+                  fontSize: 11,
+                  marginTop: 4,
+                }}
+              >
+                {item.time}
+              </Text>
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
+        ))}
+      </ScrollView>
+    </View>
+  </View>
+</Modal>
+
+{/* COMMENTS MODAL */}
+<Modal
+  visible={!!commentPost}
+  transparent
+  animationType="slide"
+  onRequestClose={() => setCommentPost(null)}
+>
+  <KeyboardAvoidingView
+    style={styles.modalBackground}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+  >
+    <View style={styles.bottomSheet}>
+      <View style={styles.sheetHandle} />
+
+      <View style={styles.modalHeader}>
+        <Text style={styles.modalTitle}>Comments</Text>
+
+        <Pressable onPress={() => setCommentPost(null)}>
+          <Text style={styles.closeText}>✕</Text>
+        </Pressable>
+      </View>
+
+      <ScrollView
+        style={{ maxHeight: 300 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {(commentPost?.comments || []).length === 0 ? (
+          <Text style={styles.emptyText}>
+            No comments yet 😊
+          </Text>
+        ) : (
+          (commentPost?.comments || []).map((comment, index) => (
+            <View
+              key={`${comment}-${index}`}
+              style={styles.commentRow}
+            >
+              <View style={styles.commentAvatar}>
+                <Text
+                  style={{
+                    color: COLORS.purple,
+                    fontWeight: "900",
+                  }}
+                >
+                  U
+                </Text>
+              </View>
+
+              <View style={styles.commentBubble}>
+                <Text style={styles.commentUser}>
+                  User
+                </Text>
+
+                <Text>{comment}</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
+
+      <View style={styles.commentComposer}>
+        <TextInput
+          style={styles.commentInput}
+          placeholder="Write a comment..."
+          value={commentText}
+          onChangeText={setCommentText}
+          onSubmitEditing={sendComment}
+        />
+
+        <Pressable
+          style={styles.sendButton}
+          onPress={sendComment}
+        >
+          <Text style={styles.sendButtonText}>
+            Send
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  </KeyboardAvoidingView>
+</Modal>
 
       <Modal
         visible={editProfile}
@@ -2137,6 +2367,8 @@ function ProfileScreen({
   onEdit,
   onLogout,
 }) {
+  const [editPost, setEditPost] = useState(null);
+  const [editCaption, setEditCaption] = useState("");
   const changeProfilePhoto = async () => {
   const permission =
     await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -2162,6 +2394,69 @@ function ProfileScreen({
   }
 };
   return (
+    <Modal
+  visible={!!editPost}
+  transparent
+  animationType="slide"
+  onRequestClose={() => setEditPost(null)}
+>
+  <KeyboardAvoidingView
+    style={styles.modalBackground}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+  >
+    <View style={styles.bottomSheet}>
+      <View style={styles.sheetHandle} />
+
+      <View style={styles.modalHeader}>
+        <Text style={styles.modalTitle}>Edit Caption</Text>
+
+        <Pressable onPress={() => setEditPost(null)}>
+          <Text style={styles.closeText}>✕</Text>
+        </Pressable>
+      </View>
+
+      <TextInput
+        style={styles.captionInput}
+        multiline
+        value={editCaption}
+        onChangeText={setEditCaption}
+        placeholder="Update caption"
+      />
+
+      <Pressable
+        style={styles.primaryButton}
+        onPress={() => {
+          const text = editCaption.trim();
+
+          if (!text || !editPost) return;
+
+          setCreatedPosts((oldPosts) =>
+            oldPosts.map((item) =>
+              item.id === editPost.id
+                ? { ...item, title: text }
+                : item
+            )
+          );
+
+          setPosts((oldPosts) =>
+            oldPosts.map((item) =>
+              item.id === editPost.id
+                ? { ...item, title: text }
+                : item
+            )
+          );
+
+          setEditPost(null);
+          setEditCaption("");
+        }}
+      >
+        <Text style={styles.primaryButtonText}>
+          Save Changes
+        </Text>
+      </Pressable>
+    </View>
+  </KeyboardAvoidingView>
+</Modal>
     <ScrollView
       contentContainerStyle={
         styles.scroll
