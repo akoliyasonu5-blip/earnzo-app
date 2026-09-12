@@ -22,6 +22,7 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const SHORT_HEIGHT = SCREEN_HEIGHT - 190;
 
 const C = {
   bg: "#F6F7FB",
@@ -30,11 +31,51 @@ const C = {
   muted: "#77798B",
   purple: "#6C4CF1",
   pink: "#FF4F8B",
+  blue: "#2D8CFF",
   green: "#20B573",
   line: "#E8E9F1",
   soft: "#F1EEFF",
   dark: "#0E0E15",
 };
+
+const demoStories = [
+  {
+    id: "story1",
+    name: "Ravi",
+    handle: "@ravi",
+    category: "Music",
+    emoji: "🎵",
+    mediaType: "demo",
+    text: "New music vibe 🎵",
+  },
+  {
+    id: "story2",
+    name: "Neha",
+    handle: "@nehavlogs",
+    category: "Travel",
+    emoji: "✈️",
+    mediaType: "demo",
+    text: "Travel day ✈️",
+  },
+  {
+    id: "story3",
+    name: "Aman",
+    handle: "@techaman",
+    category: "Tech",
+    emoji: "💡",
+    mediaType: "demo",
+    text: "Tech tip of the day 💡",
+  },
+  {
+    id: "story4",
+    name: "Meera",
+    handle: "@meeradance",
+    category: "Comedy",
+    emoji: "😂",
+    mediaType: "demo",
+    text: "Fun moment 😂",
+  },
+];
 
 const demoPosts = [
   {
@@ -48,6 +89,7 @@ const demoPosts = [
     saved: false,
     comments: ["Nice video!"],
     mediaType: "demo",
+    category: "Comedy",
   },
   {
     id: "2",
@@ -60,6 +102,20 @@ const demoPosts = [
     saved: false,
     comments: ["Amazing vlog"],
     mediaType: "demo",
+    category: "Travel",
+  },
+  {
+    id: "3",
+    name: "Tech Aman",
+    handle: "@techaman",
+    title: "Best phone tricks you should know",
+    likes: 7200,
+    following: true,
+    liked: false,
+    saved: false,
+    comments: [],
+    mediaType: "demo",
+    category: "Tech",
   },
 ];
 
@@ -73,7 +129,6 @@ export default function App() {
   const [stage, setStage] = useState("login");
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
-
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [profilePhoto, setProfilePhoto] = useState("");
@@ -81,6 +136,7 @@ export default function App() {
   const [tab, setTab] = useState("Home");
   const [posts, setPosts] = useState(demoPosts);
   const [createdPosts, setCreatedPosts] = useState([]);
+  const [stories, setStories] = useState(demoStories);
 
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentPost, setCommentPost] = useState(null);
@@ -88,6 +144,9 @@ export default function App() {
 
   const [followersOpen, setFollowersOpen] = useState(false);
   const [followingOpen, setFollowingOpen] = useState(false);
+
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+  const [storyIndex, setStoryIndex] = useState(0);
 
   const [loaded, setLoaded] = useState(false);
 
@@ -107,6 +166,7 @@ export default function App() {
     profilePhoto,
     posts,
     createdPosts,
+    stories,
   ]);
 
   const loadData = async () => {
@@ -131,6 +191,10 @@ export default function App() {
         if (Array.isArray(data.createdPosts)) {
           setCreatedPosts(data.createdPosts);
         }
+
+        if (Array.isArray(data.stories)) {
+          setStories(data.stories);
+        }
       }
     } catch (e) {
       console.log(e);
@@ -150,6 +214,7 @@ export default function App() {
           profilePhoto,
           posts,
           createdPosts,
+          stories,
         })
       );
     } catch (e) {
@@ -282,6 +347,59 @@ export default function App() {
     setCommentText("");
   };
 
+  const addStory = async () => {
+    const permission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission required",
+        "Photo/video access allow kare."
+      );
+      return;
+    }
+
+    const result =
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images", "videos"],
+        quality: 0.9,
+      });
+
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+
+    const type =
+      asset.type === "video" ? "video" : "photo";
+
+    const newStory = {
+      id: `mystory-${Date.now()}`,
+      name: name || "You",
+      handle: `@${username || "you"}`,
+      category: "Your Story",
+      emoji: "⭐",
+      mediaType: type,
+      mediaUri: asset.uri,
+      text: "Your Story",
+      isMine: true,
+    };
+
+    setStories((old) => [
+      newStory,
+      ...old.filter((s) => !s.isMine),
+    ]);
+
+    Alert.alert(
+      "Story Added ✅",
+      "Your Story ab Creator Circles me dikh rahi hai."
+    );
+  };
+
+  const openStory = (index) => {
+    setStoryIndex(index);
+    setStoryViewerOpen(true);
+  };
+
   let page = null;
 
   if (tab === "Home") {
@@ -289,6 +407,9 @@ export default function App() {
       <Home
         posts={posts}
         setPosts={setPosts}
+        stories={stories}
+        addStory={addStory}
+        openStory={openStory}
         openComments={openComments}
       />
     );
@@ -344,6 +465,7 @@ export default function App() {
           setOtp("");
           setPosts(demoPosts);
           setCreatedPosts([]);
+          setStories(demoStories);
           setTab("Home");
           setStage("login");
         }}
@@ -354,8 +476,16 @@ export default function App() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#FFFFFF"
+        barStyle={
+          tab === "Shorts"
+            ? "light-content"
+            : "dark-content"
+        }
+        backgroundColor={
+          tab === "Shorts"
+            ? "#000000"
+            : "#FFFFFF"
+        }
       />
 
       {tab !== "Shorts" && (
@@ -378,7 +508,9 @@ export default function App() {
               style={styles.wallet}
               onPress={() => setTab("Earn")}
             >
-              <Text style={styles.walletText}>₹{wallet}</Text>
+              <Text style={styles.walletText}>
+                ₹{wallet}
+              </Text>
             </Pressable>
 
             <Pressable
@@ -447,37 +579,71 @@ export default function App() {
       >
         <KeyboardAvoidingView
           style={styles.modalBg}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : "height"
+          }
         >
           <View style={styles.sheet}>
             <View style={styles.sheetTop}>
-              <Text style={styles.sheetTitle}>Comments</Text>
+              <Text style={styles.sheetTitle}>
+                Comments
+              </Text>
 
-              <Pressable onPress={() => setCommentsOpen(false)}>
+              <Pressable
+                onPress={() =>
+                  setCommentsOpen(false)
+                }
+              >
                 <Text style={styles.close}>✕</Text>
               </Pressable>
             </View>
 
-            <ScrollView style={{ maxHeight: 300 }}>
-              {(commentPost?.comments || []).map((comment, i) => (
-                <View key={i} style={styles.comment}>
-                  <View style={styles.commentAvatar}>
-                    <Text style={styles.commentAvatarText}>U</Text>
-                  </View>
+            <ScrollView
+              style={{ maxHeight: 300 }}
+            >
+              {(commentPost?.comments || []).map(
+                (comment, i) => (
+                  <View
+                    key={i}
+                    style={styles.comment}
+                  >
+                    <View
+                      style={styles.commentAvatar}
+                    >
+                      <Text
+                        style={
+                          styles.commentAvatarText
+                        }
+                      >
+                        U
+                      </Text>
+                    </View>
 
-                  <View style={styles.commentBubble}>
-                    <Text style={styles.bold}>User</Text>
-                    <Text>{comment}</Text>
+                    <View
+                      style={styles.commentBubble}
+                    >
+                      <Text style={styles.bold}>
+                        User
+                      </Text>
+                      <Text>{comment}</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                )
+              )}
 
-              {(commentPost?.comments || []).length === 0 && (
-                <Text style={styles.empty}>No comments yet</Text>
+              {(commentPost?.comments || [])
+                .length === 0 && (
+                <Text style={styles.empty}>
+                  No comments yet
+                </Text>
               )}
             </ScrollView>
 
-            <View style={styles.commentInputRow}>
+            <View
+              style={styles.commentInputRow}
+            >
               <TextInput
                 style={styles.commentInput}
                 placeholder="Write a comment..."
@@ -485,8 +651,13 @@ export default function App() {
                 onChangeText={setCommentText}
               />
 
-              <Pressable style={styles.send} onPress={sendComment}>
-                <Text style={styles.sendText}>Send</Text>
+              <Pressable
+                style={styles.send}
+                onPress={sendComment}
+              >
+                <Text style={styles.sendText}>
+                  Send
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -496,13 +667,27 @@ export default function App() {
       <People
         visible={followersOpen}
         title="Followers"
-        close={() => setFollowersOpen(false)}
+        close={() =>
+          setFollowersOpen(false)
+        }
       />
 
       <People
         visible={followingOpen}
         title="Following"
-        close={() => setFollowingOpen(false)}
+        close={() =>
+          setFollowingOpen(false)
+        }
+      />
+
+      <StoryViewer
+        visible={storyViewerOpen}
+        stories={stories}
+        index={storyIndex}
+        setIndex={setStoryIndex}
+        close={() =>
+          setStoryViewerOpen(false)
+        }
       />
     </SafeAreaView>
   );
@@ -512,10 +697,14 @@ function Brand() {
   return (
     <View style={styles.brand}>
       <View style={styles.bigLogo}>
-        <Text style={styles.bigLogoText}>EZ</Text>
+        <Text style={styles.bigLogoText}>
+          EZ
+        </Text>
       </View>
 
-      <Text style={styles.brandName}>Earnzo</Text>
+      <Text style={styles.brandName}>
+        Earnzo
+      </Text>
 
       <Text style={styles.brandTag}>
         Create • Connect • Earn
@@ -543,8 +732,13 @@ function AuthScreen({
         <Brand />
 
         <View style={styles.authCard}>
-          <Text style={styles.authTitle}>{title}</Text>
-          <Text style={styles.authSub}>{subtitle}</Text>
+          <Text style={styles.authTitle}>
+            {title}
+          </Text>
+
+          <Text style={styles.authSub}>
+            {subtitle}
+          </Text>
 
           <TextInput
             style={styles.input}
@@ -554,8 +748,13 @@ function AuthScreen({
             onChangeText={setValue}
           />
 
-          <Pressable style={styles.primary} onPress={onPress}>
-            <Text style={styles.primaryText}>{button}</Text>
+          <Pressable
+            style={styles.primary}
+            onPress={onPress}
+          >
+            <Text style={styles.primaryText}>
+              {button}
+            </Text>
           </Pressable>
 
           <Text style={styles.note}>{note}</Text>
@@ -565,14 +764,35 @@ function AuthScreen({
   );
 }
 
-function Home({ posts, setPosts, openComments }) {
-  const [activeVideo, setActiveVideo] = useState(null);
-  const [feed, setFeed] = useState("For You");
+function Home({
+  posts,
+  setPosts,
+  stories,
+  addStory,
+  openStory,
+  openComments,
+}) {
+  const [activeVideo, setActiveVideo] =
+    useState(null);
+
+  const [feed, setFeed] =
+    useState("For You");
+
+  const [category, setCategory] =
+    useState("All");
 
   let visible = posts;
 
   if (feed === "Following") {
-    visible = posts.filter((p) => p.following);
+    visible = visible.filter(
+      (p) => p.following
+    );
+  }
+
+  if (category !== "All") {
+    visible = visible.filter(
+      (p) => p.category === category
+    );
   }
 
   const like = (id) => {
@@ -582,7 +802,9 @@ function Home({ posts, setPosts, openComments }) {
           ? {
               ...p,
               liked: !p.liked,
-              likes: p.likes + (p.liked ? -1 : 1),
+              likes:
+                p.likes +
+                (p.liked ? -1 : 1),
             }
           : p
       )
@@ -593,7 +815,10 @@ function Home({ posts, setPosts, openComments }) {
     setPosts((old) =>
       old.map((p) =>
         p.id === id
-          ? { ...p, following: !p.following }
+          ? {
+              ...p,
+              following: !p.following,
+            }
           : p
       )
     );
@@ -602,16 +827,40 @@ function Home({ posts, setPosts, openComments }) {
   const save = (id) => {
     setPosts((old) =>
       old.map((p) =>
-        p.id === id ? { ...p, saved: !p.saved } : p
+        p.id === id
+          ? {
+              ...p,
+              saved: !p.saved,
+            }
+          : p
       )
     );
   };
 
+  const categoryItems = [
+    ["🎵", "Music"],
+    ["😂", "Comedy"],
+    ["💡", "Tech"],
+    ["✈️", "Travel"],
+    ["💪", "Fitness"],
+  ];
+
+  const mine = stories.find(
+    (s) => s.isMine
+  );
+
+  const otherStories =
+    stories.filter((s) => !s.isMine);
+
   return (
-    <ScrollView contentContainerStyle={styles.page}>
+    <ScrollView
+      contentContainerStyle={styles.page}
+    >
       <View style={styles.pulse}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.pulseSmall}>EARNZO PULSE</Text>
+          <Text style={styles.pulseSmall}>
+            EARNZO PULSE
+          </Text>
 
           <Text style={styles.pulseTitle}>
             What's your vibe today?
@@ -623,86 +872,226 @@ function Home({ posts, setPosts, openComments }) {
         </View>
 
         <View style={styles.pulseLogo}>
-          <Text style={styles.pulseLogoText}>EZ</Text>
+          <Text style={styles.pulseLogoText}>
+            EZ
+          </Text>
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Creator Circles</Text>
+      <Text style={styles.sectionTitle}>
+        Creator Circles
+      </Text>
 
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
       >
         <View style={styles.circles}>
-          {[
-            ["+", "Your Story"],
-            ["🎵", "Music"],
-            ["😂", "Comedy"],
-            ["💡", "Tech"],
-            ["✈️", "Travel"],
-            ["💪", "Fitness"],
-          ].map(([icon, label]) => (
-            <View key={label} style={styles.circleItem}>
+          <Pressable
+            style={styles.circleItem}
+            onPress={addStory}
+          >
+            <View
+              style={[
+                styles.circle,
+                mine && styles.circleActive,
+              ]}
+            >
+              {mine?.mediaType ===
+                "photo" &&
+              mine.mediaUri ? (
+                <Image
+                  source={{
+                    uri: mine.mediaUri,
+                  }}
+                  style={styles.circleImage}
+                />
+              ) : (
+                <Text style={styles.circleIcon}>
+                  +
+                </Text>
+              )}
+            </View>
+
+            <Text style={styles.circleText}>
+              Your Story
+            </Text>
+          </Pressable>
+
+          {otherStories.map((story) => (
+            <Pressable
+              key={story.id}
+              style={styles.circleItem}
+              onPress={() =>
+                openStory(
+                  stories.indexOf(story)
+                )
+              }
+            >
               <View style={styles.circle}>
-                <Text style={styles.circleIcon}>{icon}</Text>
+                <Text style={styles.circleIcon}>
+                  {story.emoji || "⭐"}
+                </Text>
               </View>
 
-              <Text style={styles.circleText}>{label}</Text>
-            </View>
+              <Text style={styles.circleText}>
+                {story.name}
+              </Text>
+            </Pressable>
           ))}
         </View>
       </ScrollView>
 
-      <View style={styles.feedTabs}>
-        {["For You", "Following"].map((item) => (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{
+          marginTop: 4,
+          marginBottom: 12,
+        }}
+      >
+        <View style={styles.categoryRow}>
           <Pressable
-            key={item}
             style={[
-              styles.feedTab,
-              feed === item && styles.feedTabActive,
+              styles.categoryChip,
+              category === "All" &&
+                styles.categoryChipOn,
             ]}
-            onPress={() => setFeed(item)}
+            onPress={() =>
+              setCategory("All")
+            }
           >
             <Text
               style={[
-                styles.feedTabText,
-                feed === item && { color: "#FFFFFF" },
+                styles.categoryText,
+                category === "All" && {
+                  color: "#fff",
+                },
               ]}
             >
-              {item}
+              All
             </Text>
           </Pressable>
-        ))}
+
+          {categoryItems.map(
+            ([icon, label]) => (
+              <Pressable
+                key={label}
+                style={[
+                  styles.categoryChip,
+                  category === label &&
+                    styles.categoryChipOn,
+                ]}
+                onPress={() =>
+                  setCategory(label)
+                }
+              >
+                <Text
+                  style={[
+                    styles.categoryText,
+                    category === label && {
+                      color: "#fff",
+                    },
+                  ]}
+                >
+                  {icon} {label}
+                </Text>
+              </Pressable>
+            )
+          )}
+        </View>
+      </ScrollView>
+
+      <View style={styles.feedTabs}>
+        {["For You", "Following"].map(
+          (item) => (
+            <Pressable
+              key={item}
+              style={[
+                styles.feedTab,
+                feed === item &&
+                  styles.feedTabActive,
+              ]}
+              onPress={() =>
+                setFeed(item)
+              }
+            >
+              <Text
+                style={[
+                  styles.feedTabText,
+                  feed === item && {
+                    color: "#FFFFFF",
+                  },
+                ]}
+              >
+                {item}
+              </Text>
+            </Pressable>
+          )
+        )}
       </View>
 
+      {visible.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.bold}>
+            Is category me abhi content nahi hai.
+          </Text>
+
+          <Text style={styles.muted}>
+            Create tab se content upload kare.
+          </Text>
+        </View>
+      ) : null}
+
       {visible.map((post) => (
-        <View key={post.id} style={styles.post}>
+        <View
+          key={post.id}
+          style={styles.post}
+        >
           <View style={styles.postHeader}>
-            <View style={styles.creatorAvatar}>
-              <Text style={styles.creatorAvatarText}>
+            <View
+              style={styles.creatorAvatar}
+            >
+              <Text
+                style={
+                  styles.creatorAvatarText
+                }
+              >
                 {post.name[0]}
               </Text>
             </View>
 
             <View style={{ flex: 1 }}>
-              <Text style={styles.bold}>{post.name}</Text>
-              <Text style={styles.muted}>{post.handle}</Text>
+              <Text style={styles.bold}>
+                {post.name}
+              </Text>
+
+              <Text style={styles.muted}>
+                {post.handle}
+              </Text>
             </View>
 
             <Pressable
               style={[
                 styles.follow,
-                post.following && styles.following,
+                post.following &&
+                  styles.following,
               ]}
-              onPress={() => follow(post.id)}
+              onPress={() =>
+                follow(post.id)
+              }
             >
               <Text
                 style={[
                   styles.followText,
-                  post.following && { color: C.purple },
+                  post.following && {
+                    color: C.purple,
+                  },
                 ]}
               >
-                {post.following ? "Following" : "Follow"}
+                {post.following
+                  ? "Following"
+                  : "Follow"}
               </Text>
             </Pressable>
           </View>
@@ -713,49 +1102,66 @@ function Home({ posts, setPosts, openComments }) {
             setActiveVideo={setActiveVideo}
           />
 
-          <Text style={styles.postTitle}>{post.title}</Text>
+          <Text style={styles.postTitle}>
+            {post.title}
+          </Text>
 
           <View style={styles.vibe}>
-            <Text style={styles.vibeText}>VIBE</Text>
+            <Text style={styles.vibeText}>
+              VIBE
+            </Text>
 
-            <View style={styles.vibeBubble}>
-              <Text>🔥</Text>
-            </View>
-
-            <View style={styles.vibeBubble}>
-              <Text>😍</Text>
-            </View>
-
-            <View style={styles.vibeBubble}>
-              <Text>👏</Text>
-            </View>
-
-            <View style={styles.vibeBubble}>
-              <Text>💡</Text>
-            </View>
+            {["🔥", "😍", "👏", "💡"].map(
+              (v) => (
+                <View
+                  key={v}
+                  style={styles.vibeBubble}
+                >
+                  <Text>{v}</Text>
+                </View>
+              )
+            )}
           </View>
 
           <View style={styles.actions}>
-            <Pressable onPress={() => like(post.id)}>
+            <Pressable
+              onPress={() =>
+                like(post.id)
+              }
+            >
               <Text
                 style={[
                   styles.action,
-                  post.liked && { color: C.pink },
+                  post.liked && {
+                    color: C.pink,
+                  },
                 ]}
               >
-                {post.liked ? "♥" : "♡"} {fmt(post.likes)}
+                {post.liked ? "♥" : "♡"}{" "}
+                {fmt(post.likes)}
               </Text>
             </Pressable>
 
-            <Pressable onPress={() => openComments(post)}>
+            <Pressable
+              onPress={() =>
+                openComments(post)
+              }
+            >
               <Text style={styles.action}>
-                💬 {(post.comments || []).length}
+                💬{" "}
+                {(post.comments || []).length}
               </Text>
             </Pressable>
 
-            <Pressable onPress={() => save(post.id)}>
+            <Pressable
+              onPress={() =>
+                save(post.id)
+              }
+            >
               <Text style={styles.action}>
-                {post.saved ? "🔖 Saved" : "🔖 Save"}
+                {post.saved
+                  ? "🔖 Saved"
+                  : "🔖 Save"}
               </Text>
             </Pressable>
 
@@ -766,7 +1172,9 @@ function Home({ posts, setPosts, openComments }) {
                 })
               }
             >
-              <Text style={styles.action}>↗ Share</Text>
+              <Text style={styles.action}>
+                ↗ Share
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -775,8 +1183,15 @@ function Home({ posts, setPosts, openComments }) {
   );
 }
 
-function FeedMedia({ post, activeVideo, setActiveVideo }) {
-  if (post.mediaType === "photo" && post.mediaUri) {
+function FeedMedia({
+  post,
+  activeVideo,
+  setActiveVideo,
+}) {
+  if (
+    post.mediaType === "photo" &&
+    post.mediaUri
+  ) {
     return (
       <Image
         source={{ uri: post.mediaUri }}
@@ -793,43 +1208,86 @@ function FeedMedia({ post, activeVideo, setActiveVideo }) {
     if (activeVideo !== post.id) {
       return (
         <Pressable
-          style={styles.videoPoster}
-          onPress={() => setActiveVideo(post.id)}
+          style={styles.youtubeFrame}
+          onPress={() =>
+            setActiveVideo(post.id)
+          }
         >
           {post.coverUri ? (
             <Image
-              source={{ uri: post.coverUri }}
+              source={{
+                uri: post.coverUri,
+              }}
               style={styles.poster}
             />
-          ) : null}
+          ) : (
+            <PausedVideoThumbnail
+              uri={post.mediaUri}
+            />
+          )}
 
           <View style={styles.play}>
-            <Text style={styles.playText}>▶</Text>
+            <Text style={styles.playText}>
+              ▶
+            </Text>
           </View>
-
-          <Text style={styles.tapPlay}>Tap to play</Text>
         </Pressable>
       );
     }
 
-    return <FeedVideo uri={post.mediaUri} />;
+    return (
+      <FeedVideo uri={post.mediaUri} />
+    );
   }
 
   return (
-    <View style={styles.videoPoster}>
-      <View style={styles.play}>
-        <Text style={styles.playText}>▶</Text>
-      </View>
+    <View style={styles.youtubeFrame}>
+      <View style={styles.demoThumb}>
+        <View style={styles.play}>
+          <Text style={styles.playText}>
+            ▶
+          </Text>
+        </View>
 
-      <Text style={styles.tapPlay}>Earnzo Creator Video</Text>
+        <Text style={styles.demoThumbText}>
+          Earnzo Video
+        </Text>
+      </View>
     </View>
   );
 }
 
+function PausedVideoThumbnail({ uri }) {
+  const player = useVideoPlayer(
+    uri,
+    (p) => {
+      p.loop = false;
+    }
+  );
+
+  useEffect(() => {
+    try {
+      player.pause();
+    } catch {}
+  }, [player]);
+
+  return (
+    <VideoView
+      player={player}
+      style={StyleSheet.absoluteFillObject}
+      nativeControls={false}
+      contentFit="cover"
+    />
+  );
+}
+
 function FeedVideo({ uri }) {
-  const player = useVideoPlayer(uri, (p) => {
-    p.loop = false;
-  });
+  const player = useVideoPlayer(
+    uri,
+    (p) => {
+      p.loop = false;
+    }
+  );
 
   useEffect(() => {
     try {
@@ -844,45 +1302,112 @@ function FeedVideo({ uri }) {
   }, [player]);
 
   return (
-    <View style={styles.feedVideoBox}>
+    <View style={styles.youtubeFrame}>
       <VideoView
         player={player}
         style={styles.feedVideo}
         nativeControls
         contentFit="contain"
+        allowsFullscreen
       />
     </View>
   );
 }
 
-function Shorts({ posts, setPosts, openComments }) {
-  const shorts = posts.filter((p) => p.mediaType === "short");
-  const [index, setIndex] = useState(0);
+function Shorts({
+  posts,
+  setPosts,
+  openComments,
+}) {
+  const shorts = posts.filter(
+    (p) =>
+      p.mediaType === "short" &&
+      p.mediaUri
+  );
 
-  const current =
-    shorts.length > 0
-      ? shorts[index % shorts.length]
-      : {
-          id: "demo",
-          name: "Earnzo",
-          handle: "@earnzo",
-          title: "Create your first full-screen Short",
-          likes: 0,
-          comments: [],
-          liked: false,
-          mediaType: "demo",
-        };
+  if (shorts.length === 0) {
+    return (
+      <View style={styles.shortsScreen}>
+        <View
+          style={styles.shortPlaceholder}
+        >
+          <View style={styles.bigShortLogo}>
+            <Text
+              style={
+                styles.bigShortLogoText
+              }
+            >
+              EZ
+            </Text>
+          </View>
 
+          <Text
+            style={
+              styles.shortPlaceholderTitle
+            }
+          >
+            Earnzo Shorts
+          </Text>
+
+          <Text
+            style={
+              styles.shortPlaceholderText
+            }
+          >
+            Create tab se Short upload kare.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      style={styles.shortsScreen}
+      pagingEnabled
+      showsVerticalScrollIndicator={false}
+      decelerationRate="fast"
+    >
+      {shorts.map((post) => (
+        <ShortPage
+          key={post.id}
+          post={post}
+          setPosts={setPosts}
+          openComments={openComments}
+        />
+      ))}
+    </ScrollView>
+  );
+}
+
+function ShortPage({
+  post,
+  setPosts,
+  openComments,
+}) {
   const like = () => {
-    if (current.id === "demo") return;
-
     setPosts((old) =>
       old.map((p) =>
-        p.id === current.id
+        p.id === post.id
           ? {
               ...p,
               liked: !p.liked,
-              likes: p.likes + (p.liked ? -1 : 1),
+              likes:
+                p.likes +
+                (p.liked ? -1 : 1),
+            }
+          : p
+      )
+    );
+  };
+
+  const save = () => {
+    setPosts((old) =>
+      old.map((p) =>
+        p.id === post.id
+          ? {
+              ...p,
+              saved: !p.saved,
             }
           : p
       )
@@ -890,39 +1415,51 @@ function Shorts({ posts, setPosts, openComments }) {
   };
 
   return (
-    <View style={styles.shortsScreen}>
-      {current.mediaType === "short" && current.mediaUri ? (
-        <FullShortVideo uri={current.mediaUri} />
-      ) : (
-        <View style={styles.shortPlaceholder}>
-          <View style={styles.bigShortLogo}>
-            <Text style={styles.bigShortLogoText}>EZ</Text>
-          </View>
-
-          <Text style={styles.shortPlaceholderTitle}>
-            Earnzo Shorts
-          </Text>
-
-          <Text style={styles.shortPlaceholderText}>
-            Upload a Short from Create
-          </Text>
-        </View>
-      )}
+    <View style={styles.shortPage}>
+      <FullShortVideo
+        uri={post.mediaUri}
+      />
 
       <View style={styles.shortHeader}>
-        <View style={styles.shortHeaderLogo}>
-          <Text style={styles.shortHeaderLogoText}>EZ</Text>
+        <View
+          style={styles.shortHeaderLogo}
+        >
+          <Text
+            style={
+              styles.shortHeaderLogoText
+            }
+          >
+            EZ
+          </Text>
         </View>
 
-        <Text style={styles.shortHeaderText}>For You</Text>
+        <Text
+          style={styles.shortHeaderText}
+        >
+          For You
+        </Text>
 
-        <Text style={styles.shortHeaderMuted}>Following</Text>
+        <Text
+          style={
+            styles.shortHeaderMuted
+          }
+        >
+          Following
+        </Text>
       </View>
 
       <View style={styles.shortDetails}>
-        <Text style={styles.shortCreator}>{current.handle}</Text>
+        <Text
+          style={styles.shortCreator}
+        >
+          {post.handle}
+        </Text>
 
-        <Text style={styles.shortCaption}>{current.title}</Text>
+        <Text
+          style={styles.shortCaption}
+        >
+          {post.title}
+        </Text>
 
         <Text style={styles.shortMusic}>
           ♫ Earnzo Original Sound
@@ -931,17 +1468,17 @@ function Shorts({ posts, setPosts, openComments }) {
 
       <View style={styles.shortButtons}>
         <ShortButton
-          icon={current.liked ? "♥" : "♡"}
-          text={fmt(current.likes || 0)}
+          icon={post.liked ? "♥" : "♡"}
+          text={fmt(post.likes || 0)}
           onPress={like}
         />
 
         <ShortButton
           icon="💬"
-          text={`${(current.comments || []).length}`}
-          onPress={() => {
-            if (current.id !== "demo") openComments(current);
-          }}
+          text={`${(post.comments || []).length}`}
+          onPress={() =>
+            openComments(post)
+          }
         />
 
         <ShortButton
@@ -949,29 +1486,34 @@ function Shorts({ posts, setPosts, openComments }) {
           text="Share"
           onPress={() =>
             Share.share({
-              message: `${current.name}\n${current.title}`,
+              message: `${post.name}\n${post.title}`,
             })
           }
         />
 
-        <ShortButton icon="🔖" text="Save" onPress={() => {}} />
-
-        {shorts.length > 1 && (
-          <ShortButton
-            icon="↓"
-            text="Next"
-            onPress={() => setIndex((i) => i + 1)}
-          />
-        )}
+        <ShortButton
+          icon={
+            post.saved ? "🔖" : "◇"
+          }
+          text={
+            post.saved
+              ? "Saved"
+              : "Save"
+          }
+          onPress={save}
+        />
       </View>
     </View>
   );
 }
 
 function FullShortVideo({ uri }) {
-  const player = useVideoPlayer(uri, (p) => {
-    p.loop = true;
-  });
+  const player = useVideoPlayer(
+    uri,
+    (p) => {
+      p.loop = true;
+    }
+  );
 
   useEffect(() => {
     try {
@@ -988,22 +1530,220 @@ function FullShortVideo({ uri }) {
   return (
     <VideoView
       player={player}
-      style={StyleSheet.absoluteFillObject}
+      style={
+        StyleSheet.absoluteFillObject
+      }
       nativeControls={false}
       contentFit="cover"
     />
   );
 }
 
-function ShortButton({ icon, text, onPress }) {
+function ShortButton({
+  icon,
+  text,
+  onPress,
+}) {
   return (
-    <Pressable style={styles.shortButton} onPress={onPress}>
-      <View style={styles.shortButtonCircle}>
-        <Text style={styles.shortButtonIcon}>{icon}</Text>
+    <Pressable
+      style={styles.shortButton}
+      onPress={onPress}
+    >
+      <View
+        style={styles.shortButtonCircle}
+      >
+        <Text
+          style={styles.shortButtonIcon}
+        >
+          {icon}
+        </Text>
       </View>
 
-      <Text style={styles.shortButtonText}>{text}</Text>
+      <Text
+        style={styles.shortButtonText}
+      >
+        {text}
+      </Text>
     </Pressable>
+  );
+}
+
+function StoryViewer({
+  visible,
+  stories,
+  index,
+  setIndex,
+  close,
+}) {
+  const story = stories[index];
+
+  if (!story) return null;
+
+  const next = () => {
+    if (
+      index <
+      stories.length - 1
+    ) {
+      setIndex(index + 1);
+    } else {
+      close();
+    }
+  };
+
+  const prev = () => {
+    if (index > 0) {
+      setIndex(index - 1);
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="fade"
+      onRequestClose={close}
+    >
+      <View style={styles.storyViewer}>
+        {story.mediaType === "photo" &&
+        story.mediaUri ? (
+          <Image
+            source={{
+              uri: story.mediaUri,
+            }}
+            style={styles.storyMedia}
+            resizeMode="cover"
+          />
+        ) : story.mediaType ===
+            "video" &&
+          story.mediaUri ? (
+          <StoryVideo
+            uri={story.mediaUri}
+          />
+        ) : (
+          <View style={styles.storyDemo}>
+            <Text
+              style={
+                styles.storyDemoEmoji
+              }
+            >
+              {story.emoji || "⭐"}
+            </Text>
+
+            <Text
+              style={
+                styles.storyDemoTitle
+              }
+            >
+              {story.text}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.storyTop}>
+          <View
+            style={
+              styles.storyProgressRow
+            }
+          >
+            {stories.map((s, i) => (
+              <View
+                key={s.id}
+                style={[
+                  styles.storyProgress,
+                  i <= index &&
+                    styles.storyProgressOn,
+                ]}
+              />
+            ))}
+          </View>
+
+          <View
+            style={styles.storyUserRow}
+          >
+            <View
+              style={
+                styles.storyUserAvatar
+              }
+            >
+              <Text
+                style={
+                  styles.storyUserAvatarText
+                }
+              >
+                {(story.name || "U")[0]}
+              </Text>
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <Text
+                style={
+                  styles.storyUserName
+                }
+              >
+                {story.name}
+              </Text>
+
+              <Text
+                style={
+                  styles.storyUserHandle
+                }
+              >
+                {story.handle}
+              </Text>
+            </View>
+
+            <Pressable onPress={close}>
+              <Text
+                style={styles.storyClose}
+              >
+                ✕
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <Pressable
+          style={styles.storyPrevArea}
+          onPress={prev}
+        />
+
+        <Pressable
+          style={styles.storyNextArea}
+          onPress={next}
+        />
+      </View>
+    </Modal>
+  );
+}
+
+function StoryVideo({ uri }) {
+  const player = useVideoPlayer(
+    uri,
+    (p) => {
+      p.loop = true;
+    }
+  );
+
+  useEffect(() => {
+    try {
+      player.play();
+    } catch {}
+
+    return () => {
+      try {
+        player.pause();
+      } catch {}
+    };
+  }, [player]);
+
+  return (
+    <VideoView
+      player={player}
+      style={
+        StyleSheet.absoluteFillObject
+      }
+      nativeControls={false}
+      contentFit="cover"
+    />
   );
 }
 
@@ -1017,32 +1757,61 @@ function Create({
   goHome,
   goShorts,
 }) {
-  const [media, setMedia] = useState(null);
-  const [type, setType] = useState("short");
-  const [caption, setCaption] = useState("");
-  const [cover, setCover] = useState(null);
-  const [location, setLocation] = useState("");
-  const [tags, setTags] = useState("");
+  const [media, setMedia] =
+    useState(null);
 
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [type, setType] =
+    useState("short");
 
-  const pick = async (selectedType) => {
+  const [caption, setCaption] =
+    useState("");
+
+  const [cover, setCover] =
+    useState(null);
+
+  const [location, setLocation] =
+    useState("");
+
+  const [tags, setTags] =
+    useState("");
+
+  const [category, setCategory] =
+    useState("Comedy");
+
+  const [uploading, setUploading] =
+    useState(false);
+
+  const [progress, setProgress] =
+    useState(0);
+
+  const pick = async (
+    selectedType
+  ) => {
     const permission =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert("Media permission required");
+      Alert.alert(
+        "Media permission required"
+      );
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes:
-        selectedType === "photo" ? ["images"] : ["videos"],
-      quality: 0.9,
-    });
+    const result =
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes:
+          selectedType === "photo"
+            ? ["images"]
+            : ["videos"],
+        quality: 0.9,
+      });
 
-    if (result.canceled || !result.assets?.[0]) return;
+    if (
+      result.canceled ||
+      !result.assets?.[0]
+    ) {
+      return;
+    }
 
     const asset = result.assets[0];
 
@@ -1063,43 +1832,65 @@ function Create({
   };
 
   const pickCover = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.9,
-    });
+    const result =
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.9,
+      });
 
-    if (!result.canceled && result.assets?.[0]) {
+    if (
+      !result.canceled &&
+      result.assets?.[0]
+    ) {
       setCover(result.assets[0]);
     }
   };
 
   const publish = async () => {
     if (!media) {
-      Alert.alert("Pehle photo/video select kare");
+      Alert.alert(
+        "Pehle photo/video select kare"
+      );
       return;
     }
 
     if (!caption.trim()) {
-      Alert.alert("Caption/Title likhe");
+      Alert.alert(
+        "Caption/Title likhe"
+      );
       return;
     }
 
     setUploading(true);
     setProgress(0);
 
-    const steps = [10, 25, 40, 55, 70, 85, 100];
+    const steps = [
+      10,
+      25,
+      40,
+      55,
+      70,
+      85,
+      100,
+    ];
 
     for (const p of steps) {
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) =>
+        setTimeout(resolve, 200)
+      );
+
       setProgress(p);
     }
 
     const newPost = {
       id: Date.now().toString(),
-      name: name || "Creator",
-      handle: `@${username || "creator"}`,
+      name:
+        name || "Creator",
+      handle: `@${
+        username || "creator"
+      }`,
       title: caption.trim(),
       likes: 0,
       comments: [],
@@ -1111,10 +1902,18 @@ function Create({
       coverUri: cover?.uri || "",
       location,
       tags,
+      category,
     };
 
-    setPosts([newPost, ...posts]);
-    setCreatedPosts([newPost, ...createdPosts]);
+    setPosts([
+      newPost,
+      ...posts,
+    ]);
+
+    setCreatedPosts([
+      newPost,
+      ...createdPosts,
+    ]);
 
     setMedia(null);
     setCaption("");
@@ -1127,20 +1926,32 @@ function Create({
     Alert.alert(
       "Published ✅",
       type === "short"
-        ? "Short published. Open Shorts to view full screen."
-        : "Post published successfully.",
+        ? "Short publish ho gaya. Shorts me swipe karke sab videos dekh sakte ho."
+        : "Post publish ho gaya.",
       [
         {
-          text: type === "short" ? "View Short" : "View Home",
-          onPress: type === "short" ? goShorts : goHome,
+          text:
+            type === "short"
+              ? "View Shorts"
+              : "View Home",
+          onPress:
+            type === "short"
+              ? goShorts
+              : goHome,
         },
       ]
     );
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.page}>
-      <Text style={styles.sectionTitle}>Create Studio</Text>
+    <ScrollView
+      contentContainerStyle={styles.page}
+    >
+      <Text
+        style={styles.sectionTitle}
+      >
+        Create Studio
+      </Text>
 
       <Text style={styles.sub}>
         Share your creativity with Earnzo.
@@ -1151,21 +1962,27 @@ function Create({
           icon="▶"
           title="Short / Reel"
           sub="Max 1.5 min"
-          onPress={() => pick("short")}
+          onPress={() =>
+            pick("short")
+          }
         />
 
         <CreateCard
           icon="▣"
           title="Long Video"
-          sub="Creator video"
-          onPress={() => pick("long")}
+          sub="YouTube style"
+          onPress={() =>
+            pick("long")
+          }
         />
 
         <CreateCard
           icon="◎"
           title="Photo"
           sub="Social post"
-          onPress={() => pick("photo")}
+          onPress={() =>
+            pick("photo")
+          }
         />
 
         <CreateCard
@@ -1182,22 +1999,32 @@ function Create({
       </View>
 
       {media && (
-        <View style={styles.createForm}>
-          <Text style={styles.bold}>Selected Media</Text>
+        <View
+          style={styles.createForm}
+        >
+          <Text style={styles.bold}>
+            Selected Media
+          </Text>
 
           {type === "photo" ? (
             <Image
-              source={{ uri: media.uri }}
+              source={{
+                uri: media.uri,
+              }}
               style={styles.preview}
             />
           ) : (
-            <VideoPreview uri={media.uri} />
+            <VideoPreview
+              uri={media.uri}
+            />
           )}
         </View>
       )}
 
       <View style={styles.createForm}>
-        <Text style={styles.bold}>Post Details</Text>
+        <Text style={styles.bold}>
+          Post Details
+        </Text>
 
         <TextInput
           style={styles.captionInput}
@@ -1215,36 +2042,122 @@ function Create({
         />
 
         <TextInput
-          style={[styles.input, { marginTop: 10 }]}
+          style={[
+            styles.input,
+            { marginTop: 10 },
+          ]}
           placeholder="Location"
           value={location}
           onChangeText={setLocation}
         />
 
+        <Text
+          style={[
+            styles.bold,
+            {
+              marginTop: 14,
+              marginBottom: 8,
+            },
+          ]}
+        >
+          Category
+        </Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+        >
+          <View
+            style={styles.categoryRow}
+          >
+            {[
+              "Music",
+              "Comedy",
+              "Tech",
+              "Travel",
+              "Fitness",
+            ].map((item) => (
+              <Pressable
+                key={item}
+                style={[
+                  styles.categoryChip,
+                  category === item &&
+                    styles.categoryChipOn,
+                ]}
+                onPress={() =>
+                  setCategory(item)
+                }
+              >
+                <Text
+                  style={[
+                    styles.categoryText,
+                    category === item && {
+                      color: "#fff",
+                    },
+                  ]}
+                >
+                  {item}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+
         {type !== "photo" && (
-          <Pressable style={styles.coverButton} onPress={pickCover}>
-            <Text style={styles.coverButtonText}>
-              {cover ? "✓ Cover Selected" : "Select Cover / Thumbnail"}
+          <Pressable
+            style={styles.coverButton}
+            onPress={pickCover}
+          >
+            <Text
+              style={
+                styles.coverButtonText
+              }
+            >
+              {cover
+                ? "✓ Cover Selected"
+                : "Select Cover / Thumbnail"}
             </Text>
           </Pressable>
         )}
 
         {cover && (
-          <Image source={{ uri: cover.uri }} style={styles.coverImage} />
+          <Image
+            source={{
+              uri: cover.uri,
+            }}
+            style={styles.coverImage}
+          />
         )}
 
         {uploading && (
-          <View style={styles.uploadArea}>
-            <View style={styles.progressTop}>
-              <Text style={styles.bold}>Uploading...</Text>
-              <Text style={styles.progressText}>{progress}%</Text>
+          <View
+            style={styles.uploadArea}
+          >
+            <View
+              style={styles.progressTop}
+            >
+              <Text style={styles.bold}>
+                Uploading...
+              </Text>
+
+              <Text
+                style={
+                  styles.progressText
+                }
+              >
+                {progress}%
+              </Text>
             </View>
 
-            <View style={styles.progressBar}>
+            <View
+              style={styles.progressBar}
+            >
               <View
                 style={[
                   styles.progressFill,
-                  { width: `${progress}%` },
+                  {
+                    width: `${progress}%`,
+                  },
                 ]}
               />
             </View>
@@ -1252,12 +2165,21 @@ function Create({
         )}
 
         <Pressable
-          style={[styles.primary, uploading && { opacity: 0.5 }]}
+          style={[
+            styles.primary,
+            uploading && {
+              opacity: 0.5,
+            },
+          ]}
           disabled={uploading}
           onPress={publish}
         >
-          <Text style={styles.primaryText}>
-            {uploading ? `Uploading ${progress}%` : "Publish Now"}
+          <Text
+            style={styles.primaryText}
+          >
+            {uploading
+              ? `Uploading ${progress}%`
+              : "Publish Now"}
           </Text>
         </Pressable>
       </View>
@@ -1266,7 +2188,8 @@ function Create({
 }
 
 function VideoPreview({ uri }) {
-  const player = useVideoPlayer(uri);
+  const player =
+    useVideoPlayer(uri);
 
   return (
     <VideoView
@@ -1278,27 +2201,57 @@ function VideoPreview({ uri }) {
   );
 }
 
-function CreateCard({ icon, title, sub, onPress }) {
+function CreateCard({
+  icon,
+  title,
+  sub,
+  onPress,
+}) {
   return (
-    <Pressable style={styles.createCard} onPress={onPress}>
-      <View style={styles.createIconBox}>
-        <Text style={styles.createIcon}>{icon}</Text>
+    <Pressable
+      style={styles.createCard}
+      onPress={onPress}
+    >
+      <View
+        style={styles.createIconBox}
+      >
+        <Text
+          style={styles.createIcon}
+        >
+          {icon}
+        </Text>
       </View>
 
-      <Text style={styles.bold}>{title}</Text>
-      <Text style={styles.muted}>{sub}</Text>
+      <Text style={styles.bold}>
+        {title}
+      </Text>
+
+      <Text style={styles.muted}>
+        {sub}
+      </Text>
     </Pressable>
   );
 }
 
 function Earn({ wallet }) {
   return (
-    <ScrollView contentContainerStyle={styles.page}>
+    <ScrollView
+      contentContainerStyle={styles.page}
+    >
       <View style={styles.earnHero}>
-        <Text style={styles.earnLabel}>CREATOR WALLET</Text>
-        <Text style={styles.earnAmount}>₹{wallet}</Text>
+        <Text style={styles.earnLabel}>
+          CREATOR WALLET
+        </Text>
 
-        <Text style={styles.earnDescription}>
+        <Text style={styles.earnAmount}>
+          ₹{wallet}
+        </Text>
+
+        <Text
+          style={
+            styles.earnDescription
+          }
+        >
           Your Earnzo earning dashboard
         </Text>
 
@@ -1311,11 +2264,19 @@ function Earn({ wallet }) {
             )
           }
         >
-          <Text style={styles.primaryText}>Withdraw</Text>
+          <Text
+            style={styles.primaryText}
+          >
+            Withdraw
+          </Text>
         </Pressable>
       </View>
 
-      <Text style={styles.sectionTitle}>Ways to Earn</Text>
+      <Text
+        style={styles.sectionTitle}
+      >
+        Ways to Earn
+      </Text>
 
       <View style={styles.earnGrid}>
         {[
@@ -1336,8 +2297,13 @@ function Earn({ wallet }) {
               )
             }
           >
-            <Text style={styles.earnIcon}>{icon}</Text>
-            <Text style={styles.bold}>{title}</Text>
+            <Text style={styles.earnIcon}>
+              {icon}
+            </Text>
+
+            <Text style={styles.bold}>
+              {title}
+            </Text>
           </Pressable>
         ))}
       </View>
@@ -1356,27 +2322,38 @@ function Profile({
   following,
   logout,
 }) {
-  const [photoMenu, setPhotoMenu] = useState(false);
-  const [viewPhoto, setViewPhoto] = useState(false);
+  const [photoMenu, setPhotoMenu] =
+    useState(false);
+
+  const [viewPhoto, setViewPhoto] =
+    useState(false);
 
   const choosePhoto = async () => {
     const permission =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert("Photo permission required");
+      Alert.alert(
+        "Photo permission required"
+      );
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.9,
-    });
+    const result =
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.9,
+      });
 
-    if (!result.canceled && result.assets?.[0]) {
-      setProfilePhoto(result.assets[0].uri);
+    if (
+      !result.canceled &&
+      result.assets?.[0]
+    ) {
+      setProfilePhoto(
+        result.assets[0].uri
+      );
     }
 
     setPhotoMenu(false);
@@ -1384,109 +2361,233 @@ function Profile({
 
   return (
     <>
-      <ScrollView contentContainerStyle={styles.page}>
-        <View style={styles.profileCard}>
-          <Pressable onPress={() => setPhotoMenu(true)}>
+      <ScrollView
+        contentContainerStyle={styles.page}
+      >
+        <View
+          style={styles.profileCard}
+        >
+          <Pressable
+            onPress={() =>
+              setPhotoMenu(true)
+            }
+          >
             {profilePhoto ? (
               <Image
-                source={{ uri: profilePhoto }}
-                style={styles.profilePhoto}
+                source={{
+                  uri: profilePhoto,
+                }}
+                style={
+                  styles.profilePhoto
+                }
               />
             ) : (
-              <View style={styles.profileFallback}>
-                <Text style={styles.profileFallbackText}>
+              <View
+                style={
+                  styles.profileFallback
+                }
+              >
+                <Text
+                  style={
+                    styles.profileFallbackText
+                  }
+                >
                   {(name || "E")[0].toUpperCase()}
                 </Text>
               </View>
             )}
 
-            <View style={styles.photoEdit}>
-              <Text style={{ color: "#FFFFFF" }}>+</Text>
+            <View
+              style={styles.photoEdit}
+            >
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                }}
+              >
+                +
+              </Text>
             </View>
           </Pressable>
 
-          <Text style={styles.profileName}>{name || "Creator"}</Text>
-          <Text style={styles.profileUser}>
+          <Text
+            style={styles.profileName}
+          >
+            {name || "Creator"}
+          </Text>
+
+          <Text
+            style={styles.profileUser}
+          >
             @{username || "creator"}
           </Text>
 
-          <Text style={styles.profileBio}>
+          <Text
+            style={styles.profileBio}
+          >
             Creator on Earnzo • Create • Connect • Earn
           </Text>
         </View>
 
         <View style={styles.stats}>
-          <Stat value={createdPosts.length} label="Posts" />
-          <Stat value="12.8K" label="Followers" onPress={followers} />
-          <Stat value="438" label="Following" onPress={following} />
-          <Stat value={`₹${wallet}`} label="Earned" />
+          <Stat
+            value={createdPosts.length}
+            label="Posts"
+          />
+
+          <Stat
+            value="12.8K"
+            label="Followers"
+            onPress={followers}
+          />
+
+          <Stat
+            value="438"
+            label="Following"
+            onPress={following}
+          />
+
+          <Stat
+            value={`₹${wallet}`}
+            label="Earned"
+          />
         </View>
 
-        <View style={styles.profileButtons}>
+        <View
+          style={styles.profileButtons}
+        >
           <Pressable
-            style={styles.profileButton}
+            style={
+              styles.profileButton
+            }
             onPress={() =>
               Alert.alert(
                 "Edit Profile",
-                "Profile editing next backend version mein aur detail ke saath rahegi."
+                "Profile edit next version me backend ke saath aur detail me chalega."
               )
             }
           >
-            <Text style={styles.profileButtonText}>Edit Profile</Text>
+            <Text
+              style={
+                styles.profileButtonText
+              }
+            >
+              Edit Profile
+            </Text>
           </Pressable>
 
           <Pressable
-            style={styles.profileButton}
+            style={
+              styles.profileButton
+            }
             onPress={() =>
               Share.share({
                 message: `Follow @${username} on Earnzo`,
               })
             }
           >
-            <Text style={styles.profileButtonText}>Share Profile</Text>
+            <Text
+              style={
+                styles.profileButtonText
+              }
+            >
+              Share Profile
+            </Text>
           </Pressable>
         </View>
 
-        <Text style={styles.sectionTitle}>Your Content</Text>
+        <Text
+          style={styles.sectionTitle}
+        >
+          Your Content
+        </Text>
 
         {createdPosts.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={{ fontSize: 34 }}>+</Text>
-            <Text style={styles.bold}>No posts yet</Text>
+            <Text
+              style={{
+                fontSize: 34,
+              }}
+            >
+              +
+            </Text>
+
+            <Text style={styles.bold}>
+              No posts yet
+            </Text>
+
             <Text style={styles.muted}>
               Create tab se apna first post upload kare.
             </Text>
           </View>
         ) : (
-          createdPosts.map((post) => (
-            <View key={post.id} style={styles.myPost}>
-              {post.mediaType === "photo" ? (
-                <Image
-                  source={{ uri: post.mediaUri }}
-                  style={styles.myPostImage}
-                />
-              ) : (
-                <View style={styles.myPostVideo}>
-                  <Text style={{ fontSize: 25 }}>▶</Text>
-                </View>
-              )}
+          createdPosts.map(
+            (post) => (
+              <View
+                key={post.id}
+                style={styles.myPost}
+              >
+                {post.mediaType ===
+                "photo" ? (
+                  <Image
+                    source={{
+                      uri: post.mediaUri,
+                    }}
+                    style={
+                      styles.myPostImage
+                    }
+                  />
+                ) : (
+                  <View
+                    style={
+                      styles.myPostVideo
+                    }
+                  >
+                    <Text
+                      style={{
+                        fontSize: 25,
+                      }}
+                    >
+                      ▶
+                    </Text>
+                  </View>
+                )}
 
-              <View style={{ flex: 1 }}>
-                <Text style={styles.bold}>{post.title}</Text>
-                <Text style={styles.muted}>
-                  {post.mediaType === "short"
-                    ? "Short"
-                    : post.mediaType === "long"
-                    ? "Long Video"
-                    : "Photo"}
-                </Text>
+                <View
+                  style={{ flex: 1 }}
+                >
+                  <Text
+                    style={styles.bold}
+                  >
+                    {post.title}
+                  </Text>
+
+                  <Text
+                    style={styles.muted}
+                  >
+                    {post.mediaType ===
+                    "short"
+                      ? "Short"
+                      : post.mediaType ===
+                        "long"
+                      ? "Long Video"
+                      : "Photo"}
+                  </Text>
+                </View>
               </View>
-            </View>
-          ))
+            )
+          )
         )}
 
-        <Pressable style={styles.logout} onPress={logout}>
-          <Text style={styles.logoutText}>Logout</Text>
+        <Pressable
+          style={styles.logout}
+          onPress={logout}
+        >
+          <Text
+            style={styles.logoutText}
+          >
+            Logout
+          </Text>
         </Pressable>
       </ScrollView>
 
@@ -1494,20 +2595,37 @@ function Profile({
         visible={photoMenu}
         transparent
         animationType="slide"
-        onRequestClose={() => setPhotoMenu(false)}
+        onRequestClose={() =>
+          setPhotoMenu(false)
+        }
       >
         <View style={styles.modalBg}>
           <View style={styles.sheet}>
-            <View style={styles.sheetTop}>
-              <Text style={styles.sheetTitle}>Profile Photo</Text>
+            <View
+              style={styles.sheetTop}
+            >
+              <Text
+                style={styles.sheetTitle}
+              >
+                Profile Photo
+              </Text>
 
-              <Pressable onPress={() => setPhotoMenu(false)}>
-                <Text style={styles.close}>✕</Text>
+              <Pressable
+                onPress={() =>
+                  setPhotoMenu(false)
+                }
+              >
+                <Text style={styles.close}>
+                  ✕
+                </Text>
               </Pressable>
             </View>
 
             {!profilePhoto ? (
-              <Menu title="Add Photo" onPress={choosePhoto} />
+              <Menu
+                title="Add Photo"
+                onPress={choosePhoto}
+              />
             ) : (
               <>
                 <Menu
@@ -1518,7 +2636,10 @@ function Profile({
                   }}
                 />
 
-                <Menu title="Change Photo" onPress={choosePhoto} />
+                <Menu
+                  title="Change Photo"
+                  onPress={choosePhoto}
+                />
 
                 <Menu
                   title="Remove Photo"
@@ -1538,19 +2659,33 @@ function Profile({
         visible={viewPhoto}
         transparent
         animationType="fade"
-        onRequestClose={() => setViewPhoto(false)}
+        onRequestClose={() =>
+          setViewPhoto(false)
+        }
       >
-        <View style={styles.photoViewer}>
+        <View
+          style={styles.photoViewer}
+        >
           <Pressable
             style={styles.photoClose}
-            onPress={() => setViewPhoto(false)}
+            onPress={() =>
+              setViewPhoto(false)
+            }
           >
-            <Text style={styles.photoCloseText}>✕</Text>
+            <Text
+              style={
+                styles.photoCloseText
+              }
+            >
+              ✕
+            </Text>
           </Pressable>
 
           {profilePhoto ? (
             <Image
-              source={{ uri: profilePhoto }}
+              source={{
+                uri: profilePhoto,
+              }}
               style={styles.fullPhoto}
               resizeMode="contain"
             />
@@ -1561,13 +2696,22 @@ function Profile({
   );
 }
 
-function Menu({ title, onPress, danger }) {
+function Menu({
+  title,
+  onPress,
+  danger,
+}) {
   return (
-    <Pressable style={styles.menu} onPress={onPress}>
+    <Pressable
+      style={styles.menu}
+      onPress={onPress}
+    >
       <Text
         style={[
           styles.menuText,
-          danger && { color: C.pink },
+          danger && {
+            color: C.pink,
+          },
         ]}
       >
         {title}
@@ -1576,26 +2720,46 @@ function Menu({ title, onPress, danger }) {
   );
 }
 
-function Stat({ value, label, onPress }) {
+function Stat({
+  value,
+  label,
+  onPress,
+}) {
   const inside = (
     <>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.statValue}>
+        {value}
+      </Text>
+
+      <Text style={styles.statLabel}>
+        {label}
+      </Text>
     </>
   );
 
   if (onPress) {
     return (
-      <Pressable style={styles.stat} onPress={onPress}>
+      <Pressable
+        style={styles.stat}
+        onPress={onPress}
+      >
         {inside}
       </Pressable>
     );
   }
 
-  return <View style={styles.stat}>{inside}</View>;
+  return (
+    <View style={styles.stat}>
+      {inside}
+    </View>
+  );
 }
 
-function People({ visible, title, close }) {
+function People({
+  visible,
+  title,
+  close,
+}) {
   const people = [
     ["Neha Vlogs", "@nehavlogs"],
     ["Ravi Creator", "@ravi"],
@@ -1612,50 +2776,105 @@ function People({ visible, title, close }) {
     >
       <View style={styles.modalBg}>
         <View style={styles.sheet}>
-          <View style={styles.sheetTop}>
-            <Text style={styles.sheetTitle}>{title}</Text>
-            <Pressable onPress={close}>
-              <Text style={styles.close}>✕</Text>
+          <View
+            style={styles.sheetTop}
+          >
+            <Text
+              style={styles.sheetTitle}
+            >
+              {title}
+            </Text>
+
+            <Pressable
+              onPress={close}
+            >
+              <Text style={styles.close}>
+                ✕
+              </Text>
             </Pressable>
           </View>
 
-          {people.map(([name, user]) => (
-            <View key={user} style={styles.person}>
-              <View style={styles.creatorAvatar}>
-                <Text style={styles.creatorAvatarText}>
-                  {name[0]}
-                </Text>
-              </View>
+          {people.map(
+            ([personName, user]) => (
+              <View
+                key={user}
+                style={styles.person}
+              >
+                <View
+                  style={
+                    styles.creatorAvatar
+                  }
+                >
+                  <Text
+                    style={
+                      styles.creatorAvatarText
+                    }
+                  >
+                    {personName[0]}
+                  </Text>
+                </View>
 
-              <View style={{ flex: 1 }}>
-                <Text style={styles.bold}>{name}</Text>
-                <Text style={styles.muted}>{user}</Text>
-              </View>
+                <View
+                  style={{ flex: 1 }}
+                >
+                  <Text
+                    style={styles.bold}
+                  >
+                    {personName}
+                  </Text>
 
-              <Pressable style={styles.follow}>
-                <Text style={styles.followText}>Follow</Text>
-              </Pressable>
-            </View>
-          ))}
+                  <Text
+                    style={styles.muted}
+                  >
+                    {user}
+                  </Text>
+                </View>
+
+                <Pressable
+                  style={styles.follow}
+                >
+                  <Text
+                    style={
+                      styles.followText
+                    }
+                  >
+                    Follow
+                  </Text>
+                </Pressable>
+              </View>
+            )
+          )}
         </View>
       </View>
     </Modal>
   );
 }
 
-function Nav({ icon, label, active, onPress }) {
+function Nav({
+  icon,
+  label,
+  active,
+  onPress,
+}) {
   return (
-    <Pressable style={styles.navItem} onPress={onPress}>
+    <Pressable
+      style={styles.navItem}
+      onPress={onPress}
+    >
       <View
         style={[
           styles.navIcon,
-          active && { backgroundColor: C.purple },
+          active && {
+            backgroundColor: C.purple,
+          },
         ]}
       >
         <Text
           style={[
             styles.navIconText,
-            active && { color: "#FFFFFF" },
+            active && {
+              color: "#FFFFFF",
+            },
           ]}
         >
           {icon}
@@ -1665,7 +2884,9 @@ function Nav({ icon, label, active, onPress }) {
       <Text
         style={[
           styles.navLabel,
-          active && { color: C.purple },
+          active && {
+            color: C.purple,
+          },
         ]}
       >
         {label}
@@ -1679,7 +2900,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: C.bg,
     paddingTop:
-      Platform.OS === "android" ? StatusBar.currentHeight : 0,
+      Platform.OS === "android"
+        ? StatusBar.currentHeight
+        : 0,
   },
 
   header: {
@@ -1763,13 +2986,17 @@ const styles = StyleSheet.create({
   },
 
   nav: {
-    minHeight: 92,
+    minHeight: 108,
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: C.line,
     flexDirection: "row",
-    alignItems: "center",
-    paddingBottom: Platform.OS === "android" ? 28 : 7,
+    alignItems: "flex-start",
+    paddingTop: 8,
+    paddingBottom:
+      Platform.OS === "android"
+        ? 42
+        : 10,
   },
 
   navItem: {
@@ -1778,8 +3005,8 @@ const styles = StyleSheet.create({
   },
 
   navIcon: {
-    width: 38,
-    height: 32,
+    width: 40,
+    height: 34,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
@@ -1793,9 +3020,9 @@ const styles = StyleSheet.create({
 
   navLabel: {
     color: C.muted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "800",
-    marginTop: 3,
+    marginTop: 4,
   },
 
   page: {
@@ -1856,7 +3083,7 @@ const styles = StyleSheet.create({
 
   circles: {
     flexDirection: "row",
-    paddingBottom: 14,
+    paddingBottom: 12,
   },
 
   circleItem: {
@@ -1873,6 +3100,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+
+  circleActive: {
+    borderColor: C.pink,
+  },
+
+  circleImage: {
+    width: "100%",
+    height: "100%",
   },
 
   circleIcon: {
@@ -1884,6 +3121,31 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "700",
     marginTop: 5,
+  },
+
+  categoryRow: {
+    flexDirection: "row",
+  },
+
+  categoryChip: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: C.line,
+    borderRadius: 18,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+
+  categoryChipOn: {
+    backgroundColor: C.purple,
+    borderColor: C.purple,
+  },
+
+  categoryText: {
+    color: C.text,
+    fontWeight: "800",
+    fontSize: 12,
   },
 
   feedTabs: {
@@ -1968,18 +3230,18 @@ const styles = StyleSheet.create({
 
   feedImage: {
     width: "100%",
-    height: 330,
+    aspectRatio: 16 / 9,
     borderRadius: 18,
   },
 
-  videoPoster: {
+  youtubeFrame: {
     width: "100%",
-    height: 320,
+    aspectRatio: 16 / 9,
     borderRadius: 18,
-    backgroundColor: "#12131A",
+    backgroundColor: "#000000",
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
   },
 
   poster: {
@@ -1988,33 +3250,33 @@ const styles = StyleSheet.create({
     height: "100%",
   },
 
+  demoThumb: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#12131A",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  demoThumbText: {
+    color: "#FFFFFF",
+    marginTop: 10,
+    fontWeight: "800",
+  },
+
   play: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: C.purple,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 3,
   },
 
   playText: {
     color: "#FFFFFF",
     fontSize: 25,
     marginLeft: 3,
-  },
-
-  tapPlay: {
-    color: "#FFFFFF",
-    marginTop: 10,
-    fontWeight: "800",
-  },
-
-  feedVideoBox: {
-    width: "100%",
-    height: 330,
-    borderRadius: 18,
-    overflow: "hidden",
-    backgroundColor: "#000000",
   },
 
   feedVideo: {
@@ -2067,11 +3329,16 @@ const styles = StyleSheet.create({
   shortsScreen: {
     flex: 1,
     backgroundColor: "#000000",
-    minHeight: SCREEN_HEIGHT - 150,
+  },
+
+  shortPage: {
+    height: SHORT_HEIGHT,
+    backgroundColor: "#000000",
+    overflow: "hidden",
   },
 
   shortPlaceholder: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     backgroundColor: "#101118",
     alignItems: "center",
     justifyContent: "center",
@@ -2111,6 +3378,7 @@ const styles = StyleSheet.create({
     right: 12,
     flexDirection: "row",
     alignItems: "center",
+    zIndex: 4,
   },
 
   shortHeaderLogo: {
@@ -2143,7 +3411,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 16,
     right: 88,
-    bottom: 25,
+    bottom: 28,
+    zIndex: 4,
   },
 
   shortCreator: {
@@ -2167,7 +3436,8 @@ const styles = StyleSheet.create({
   shortButtons: {
     position: "absolute",
     right: 12,
-    bottom: 24,
+    bottom: 26,
+    zIndex: 4,
   },
 
   shortButton: {
@@ -2179,7 +3449,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor:
+      "rgba(0,0,0,0.45)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2195,6 +3466,118 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "800",
     marginTop: 3,
+  },
+
+  storyViewer: {
+    flex: 1,
+    backgroundColor: "#000000",
+  },
+
+  storyMedia: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+  },
+
+  storyDemo: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: C.dark,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  storyDemoEmoji: {
+    fontSize: 76,
+  },
+
+  storyDemoTitle: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "900",
+    marginTop: 18,
+  },
+
+  storyTop: {
+    position: "absolute",
+    top:
+      Platform.OS === "android"
+        ? 24
+        : 42,
+    left: 12,
+    right: 12,
+    zIndex: 10,
+  },
+
+  storyProgressRow: {
+    flexDirection: "row",
+  },
+
+  storyProgress: {
+    flex: 1,
+    height: 3,
+    backgroundColor:
+      "rgba(255,255,255,0.35)",
+    borderRadius: 3,
+    marginRight: 4,
+  },
+
+  storyProgressOn: {
+    backgroundColor: "#FFFFFF",
+  },
+
+  storyUserRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+  },
+
+  storyUserAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: C.purple,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 9,
+  },
+
+  storyUserAvatarText: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+  },
+
+  storyUserName: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+  },
+
+  storyUserHandle: {
+    color: "#D7D7DB",
+    fontSize: 11,
+  },
+
+  storyClose: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    padding: 6,
+  },
+
+  storyPrevArea: {
+    position: "absolute",
+    left: 0,
+    top: 100,
+    bottom: 0,
+    width: "40%",
+    zIndex: 8,
+  },
+
+  storyNextArea: {
+    position: "absolute",
+    right: 0,
+    top: 100,
+    bottom: 0,
+    width: "60%",
+    zIndex: 8,
   },
 
   sub: {
@@ -2246,14 +3629,14 @@ const styles = StyleSheet.create({
 
   preview: {
     width: "100%",
-    height: 270,
+    aspectRatio: 16 / 9,
     borderRadius: 16,
     marginTop: 10,
   },
 
   previewVideo: {
     width: "100%",
-    height: 270,
+    aspectRatio: 16 / 9,
     backgroundColor: "#000000",
     borderRadius: 16,
     marginTop: 10,
@@ -2295,7 +3678,7 @@ const styles = StyleSheet.create({
 
   coverImage: {
     width: "100%",
-    height: 160,
+    aspectRatio: 16 / 9,
     borderRadius: 14,
     marginTop: 10,
   },
@@ -2623,7 +4006,8 @@ const styles = StyleSheet.create({
 
   modalBg: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor:
+      "rgba(0,0,0,0.45)",
     justifyContent: "flex-end",
   },
 
@@ -2632,7 +4016,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 16,
-    paddingBottom: Platform.OS === "android" ? 34 : 20,
+    paddingBottom:
+      Platform.OS === "android"
+        ? 34
+        : 20,
   },
 
   sheetTop: {
@@ -2753,7 +4140,8 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: "rgba(255,255,255,0.18)",
+    backgroundColor:
+      "rgba(255,255,255,0.18)",
     alignItems: "center",
     justifyContent: "center",
   },
