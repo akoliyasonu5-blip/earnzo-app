@@ -50,6 +50,10 @@ export async function fetchFeed(userId = "") {
   return request(`/v1/feed${q}`);
 }
 
+export async function fetchStories() {
+  return request("/v1/stories");
+}
+
 function mediaPart(uri, kind = "video") {
   const ext = kind === "image" ? "jpg" : "mp4";
   const type = kind === "image" ? "image/jpeg" : "video/mp4";
@@ -72,6 +76,18 @@ export async function createPost(post) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(post),
+  });
+}
+
+export async function createStory(story, mediaUri) {
+  const mediaKind = story.mediaType === "video" ? "video" : "image";
+  const uploaded = mediaUri ? await uploadMedia(mediaUri, mediaKind) : null;
+  return createPost({
+    ...story,
+    kind: "story",
+    title: story.title || "Story",
+    mediaUri: uploaded?.url || mediaUri || "",
+    uploadedAt: Date.now(),
   });
 }
 
@@ -129,4 +145,16 @@ export async function followRemoteUser(followerId, followingId) {
 
 export async function searchRemote(query) {
   return request(`/v1/search?q=${encodeURIComponent(query || "")}`);
+}
+
+export async function fetchNotifications(userId) {
+  return request(`/v1/notifications?userId=${encodeURIComponent(userId || "")}`);
+}
+
+export async function markNotificationsRead(userId) {
+  return request("/v1/notifications/read", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  });
 }
