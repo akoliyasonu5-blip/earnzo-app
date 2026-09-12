@@ -119,6 +119,18 @@ export async function syncPostToBackend(post, mediaUri, coverUri) {
   });
 }
 
+export async function recordRemoteView(postId, userId) {
+  return request(`/v1/posts/${encodeURIComponent(postId)}/view`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  });
+}
+
+export async function fetchCreatorStats(creatorId) {
+  return request(`/v1/creator-stats?creatorId=${encodeURIComponent(creatorId || "")}`);
+}
+
 export async function toggleLike(postId, userId) {
   return request(`/v1/posts/${encodeURIComponent(postId)}/like`, {
     method: "POST",
