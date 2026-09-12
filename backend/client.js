@@ -146,6 +146,21 @@ export async function applyForMonetization(payload) {
   });
 }
 
+export async function fetchWalletStatus(creatorId, currencyCode = "") {
+  const params = new URLSearchParams();
+  params.set("creatorId", creatorId || "");
+  if (currencyCode) params.set("currencyCode", currencyCode);
+  return request(`/v1/wallet?${params.toString()}`);
+}
+
+export async function requestCreatorPayout(payload) {
+  return request("/v1/payouts/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
+  });
+}
+
 export async function toggleLike(postId, userId) {
   return request(`/v1/posts/${encodeURIComponent(postId)}/like`, {
     method: "POST",
