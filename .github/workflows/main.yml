@@ -34,6 +34,9 @@ jobs:
       - name: Apply editor upgrades
         run: node scripts/patch-editor.js
 
+      - name: Apply trim upgrade
+        run: node scripts/patch-trim.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
