@@ -79,7 +79,7 @@ jobs:
         run: node scripts/patch-priority-experience.js
 
       - name: Apply global language and region
-        run: node scripts/patch-global-language-region.js
+        run: node scripts/patch-global-language-region-v2.js
 
       - name: Apply creator stats and valid views
         run: node scripts/patch-creator-stats-views.js
