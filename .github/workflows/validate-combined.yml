@@ -55,6 +55,8 @@ jobs:
           node scripts/patch-cloud-messaging.js
           node scripts/patch-creator-analytics.js
           node scripts/patch-social-graph.js
+          node scripts/patch-comment-keyboard.js
+          node scripts/patch-secure-auth-options.js
 
       - name: Confirm final patch markers
         run: |
@@ -70,4 +72,6 @@ jobs:
           grep -q "Earnzo cloud messaging active" App.js
           grep -q "Earnzo creator analytics active" App.js
           grep -q "Earnzo social graph active" App.js
+          grep -q "Earnzo comment keyboard fix active" App.js
+          grep -q "Earnzo secure auth options active" App.js
           echo "Combined patch validation passed"
