@@ -51,6 +51,7 @@ jobs:
           grep -q "/v1/notifications" server/index-durable.js
           grep -q "/v1/messages" server/index-durable.js
           grep -q "/v1/creator-analytics" server/index-durable.js
+          grep -q "/v1/support" server/index-durable.js
 
       - name: Generate Earnzo brand assets
         run: node scripts/generate-brand-assets.js
@@ -94,10 +95,12 @@ jobs:
           node scripts/patch-social-graph.js
           node scripts/patch-comment-keyboard.js
           node scripts/patch-secure-auth-options.js
+          node scripts/patch-auth-provider-fallback.js
           node scripts/patch-voice-video-calls.js
           node scripts/patch-brand-logo.js
           node scripts/patch-upload-rules.js
           node scripts/patch-real-upload-progress.js
+          node scripts/patch-social-polish-security.js
 
       - name: Confirm final patch markers
         run: |
@@ -120,6 +123,7 @@ jobs:
           grep -q "Earnzo upload rules active" App.js
           grep -q "durationMs <= 90000" App.js
           grep -q "Earnzo real upload progress active" App.js
+          grep -q "Earnzo social polish security active" App.js
           test -s assets/earnzo-icon.png
           echo "Combined patch validation passed"
 
