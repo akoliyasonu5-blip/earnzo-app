@@ -38,3 +38,5 @@ jobs:
           check "/v1/messages/social?userId=%40qa-smoke&viewerId=%40qa-smoke"
           check "/v1/creator-analytics?creatorId=%40qa-smoke"
           echo "Earnzo live backend smoke checks passed"
+
+# QA trigger: 2026-09-13 live backend verification
