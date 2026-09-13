@@ -3,11 +3,12 @@ const express = require('express');
 const router = express.Router();
 const DATA_URL = (process.env.SUPABASE_DATA_FUNCTION_URL || '').trim();
 const MESSAGES_URL = (process.env.SUPABASE_MESSAGES_FUNCTION_URL || (DATA_URL ? DATA_URL.replace(/earnzo-data\/?$/, 'earnzo-messages') : '')).trim();
+const SOCIAL_URL = (process.env.SUPABASE_SOCIAL_FUNCTION_URL || (DATA_URL ? DATA_URL.replace(/earnzo-data\/?$/, 'earnzo-social') : '')).trim();
 const ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
 
-async function callMessages(action, payload = {}) {
-  if (!MESSAGES_URL || !ANON_KEY) throw new Error('Messaging service is not configured');
-  const response = await fetch(MESSAGES_URL, {
+async function callFunction(url, label, action, payload = {}) {
+  if (!url || !ANON_KEY) throw new Error(`${label} service is not configured`);
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -20,7 +21,7 @@ async function callMessages(action, payload = {}) {
   let body = null;
   try { body = text ? JSON.parse(text) : null; } catch { body = text; }
   if (!response.ok) {
-    const err = new Error(body?.error || `Messaging request failed (${response.status})`);
+    const err = new Error(body?.error || `${label} request failed (${response.status})`);
     err.status = response.status;
     err.body = body;
     throw err;
@@ -28,11 +29,24 @@ async function callMessages(action, payload = {}) {
   return { status: response.status, body };
 }
 
+const callMessages = (action, payload = {}) => callFunction(MESSAGES_URL, 'Messaging', action, payload);
+const callSocial = (action, payload = {}) => callFunction(SOCIAL_URL, 'Social', action, payload);
+
 router.get('/', async (req, res, next) => {
   try {
     const userId = String(req.query.userId || '').trim();
     if (!userId) return res.json({ conversations: [], unread: 0 });
     const out = await callMessages('inbox', { userId });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+router.get('/social', async (req, res, next) => {
+  try {
+    const userId = String(req.query.userId || '').trim();
+    const viewerId = String(req.query.viewerId || userId).trim();
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    const out = await callSocial('graph', { userId, viewerId });
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
