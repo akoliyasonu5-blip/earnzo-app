@@ -27,6 +27,31 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install backend dependencies
+        run: |
+          cd server
+          npm install
+
+      - name: Check backend server syntax
+        run: |
+          for f in server/*.js; do
+            node --check "$f"
+          done
+
+      - name: Confirm backend route markers
+        run: |
+          grep -q "/v1/stories" server/index-durable.js
+          grep -q "/v1/creator-stats" server/index-durable.js
+          grep -q "/v1/monetization/status" server/index-durable.js
+          grep -q "/v1/monetization/apply" server/index-durable.js
+          grep -q "/v1/wallet" server/index-durable.js
+          grep -q "/v1/payouts/request" server/index-durable.js
+          grep -q "/v1/blocks" server/index-durable.js
+          grep -q "/v1/reports" server/index-durable.js
+          grep -q "/v1/notifications" server/index-durable.js
+          grep -q "/v1/messages" server/index-durable.js
+          grep -q "/v1/creator-analytics" server/index-durable.js
+
       - name: Generate Earnzo brand assets
         run: node scripts/generate-brand-assets.js
 
