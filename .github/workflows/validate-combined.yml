@@ -18,6 +18,18 @@ jobs:
         with:
           node-version: 20
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Earnzo brand assets
+        run: node scripts/generate-brand-assets.js
+
       - name: Check active patch script syntax
         run: |
           for f in scripts/*.js; do
@@ -58,6 +70,7 @@ jobs:
           node scripts/patch-comment-keyboard.js
           node scripts/patch-secure-auth-options.js
           node scripts/patch-voice-video-calls.js
+          node scripts/patch-brand-logo.js
 
       - name: Confirm final patch markers
         run: |
@@ -76,4 +89,18 @@ jobs:
           grep -q "Earnzo comment keyboard fix active" App.js
           grep -q "Earnzo secure auth options active" App.js
           grep -q "Earnzo WebRTC calls active" App.js
+          grep -q "Earnzo brand logo active" App.js
+          test -s assets/earnzo-icon.png
           echo "Combined patch validation passed"
+
+      - name: Validate Expo config
+        run: npx expo config --type public > /tmp/earnzo-expo-config.txt
+
+      - name: Create Android project
+        run: npx expo prebuild --platform android --non-interactive
+
+      - name: Compile Android debug build
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
