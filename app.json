@@ -8,13 +8,20 @@
     "android": {
       "package": "com.earnzo.app",
       "softwareKeyboardLayoutMode": "resize",
-      "permissions": ["CAMERA", "RECORD_AUDIO"]
+      "permissions": ["CAMERA", "RECORD_AUDIO", "MODIFY_AUDIO_SETTINGS"]
     },
     "plugins": [
       [
         "expo-web-browser",
         {
           "experimentalLauncherActivity": false
+        }
+      ],
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "Allow Earnzo to use your camera for video calls.",
+          "microphonePermission": "Allow Earnzo to use your microphone for voice and video calls."
         }
       ]
     ]
