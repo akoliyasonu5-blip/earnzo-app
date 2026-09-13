@@ -6,6 +6,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { uploadViaSignedTus, signedStorageEnabled } = require('./signed-storage');
 const messagesRoutes = require('./messages-routes');
+const analyticsRoutes = require('./analytics-routes');
 
 const app = express();
 app.set('trust proxy', true);
@@ -68,11 +69,12 @@ app.get('/health', async (_req, res) => {
     res.json({
       ok: true,
       service: 'earnzo-backend',
-      version: '0.9.0',
+      version: '1.0.0',
       database: data.body?.database || 'supabase-postgres',
       mediaStorage: signedStorageEnabled() ? 'supabase-storage' : 'not-configured',
       monetizationService: MONETIZATION_URL ? 'configured' : 'not-configured',
       messagingService: DATA_URL ? 'configured' : 'not-configured',
+      analyticsService: DATA_URL ? 'configured' : 'not-configured',
     });
   } catch (e) {
     res.status(503).json({ ok: false, error: e?.message || 'Backend unavailable' });
@@ -261,6 +263,7 @@ app.get('/v1/search', async (req, res, next) => {
 });
 
 app.use('/v1/messages', messagesRoutes);
+app.use('/v1/creator-analytics', analyticsRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error('Earnzo backend error:', err);
