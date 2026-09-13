@@ -135,6 +135,9 @@ jobs:
       - name: Apply real upload progress
         run: node scripts/patch-real-upload-progress.js
 
+      - name: Apply social polish and security
+        run: node scripts/patch-social-polish-security.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
