@@ -121,10 +121,27 @@ jobs:
           grep -q "durationMs <= 90000" App.js
           grep -q "Earnzo real upload progress active" App.js
           test -s assets/earnzo-icon.png
-          echo "Combined patch validation passed"
+          echo "Combined patch markers passed"
+
+      - name: Parse final App source
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const parser = require('@babel/parser');
+          parser.parse(fs.readFileSync('App.js', 'utf8'), {
+            sourceType: 'module',
+            plugins: ['jsx', 'optionalChaining', 'nullishCoalescingOperator', 'objectRestSpread'],
+          });
+          console.log('Final App.js parse passed');
+          NODE
 
       - name: Validate Expo config
         run: npx expo config --type public > /tmp/earnzo-expo-config.txt
+
+      - name: Production Metro bundle check
+        env:
+          NODE_ENV: production
+        run: npx expo export --platform android --output-dir /tmp/earnzo-export
 
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
