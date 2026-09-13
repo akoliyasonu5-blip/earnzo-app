@@ -57,6 +57,7 @@ jobs:
           node scripts/patch-social-graph.js
           node scripts/patch-comment-keyboard.js
           node scripts/patch-secure-auth-options.js
+          node scripts/patch-voice-video-calls.js
 
       - name: Confirm final patch markers
         run: |
@@ -74,4 +75,5 @@ jobs:
           grep -q "Earnzo social graph active" App.js
           grep -q "Earnzo comment keyboard fix active" App.js
           grep -q "Earnzo secure auth options active" App.js
+          grep -q "Earnzo WebRTC calls active" App.js
           echo "Combined patch validation passed"
