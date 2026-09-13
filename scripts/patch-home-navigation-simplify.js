@@ -11,9 +11,10 @@ if (code.includes('Earnzo simplified home navigation active')) {
 function replaceFunction(name, replacement) {
   const start = code.indexOf('function ' + name + '(');
   if (start < 0) throw new Error('Simplified navigation patch failed: ' + name + ' not found');
-  const end = code.indexOf('\nfunction ', start + 12);
-  if (end < 0) throw new Error('Simplified navigation patch failed: next function after ' + name + ' not found');
-  code = code.slice(0, start) + replacement + '\n' + code.slice(end + 1);
+  let end = code.indexOf('\nfunction ', start + 12);
+  if (end < 0) end = code.indexOf('\n\nconst styles =', start + 12);
+  if (end < 0) throw new Error('Simplified navigation patch failed: end of ' + name + ' not found');
+  code = code.slice(0, start) + replacement + '\n' + code.slice(end + (code.startsWith('\nfunction ', end) ? 1 : 0));
 }
 
 // Home should not filter by upload category. Category belongs to publishing, not browsing controls.
