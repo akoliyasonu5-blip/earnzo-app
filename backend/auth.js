@@ -73,6 +73,27 @@ export async function signInGoogle() {
   return sessionResult.data;
 }
 
+export async function changeAuthPassword(newPassword) {
+  ensureConfigured();
+  const password = String(newPassword || '');
+  if (password.length < 8) throw new Error('Password minimum 8 characters ka hona chahiye.');
+  const { data: sessionData, error: sessionError } = await supabaseAuth.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!sessionData?.session) throw new Error('Secure account session required. Please login again.');
+  const { data, error } = await supabaseAuth.auth.updateUser({ password });
+  if (error) throw error;
+  return data;
+}
+
+export async function sendPasswordRecovery(email) {
+  ensureConfigured();
+  const address = String(email || '').trim().toLowerCase();
+  if (!address.includes('@')) throw new Error('Valid recovery email enter kare.');
+  const { data, error } = await supabaseAuth.auth.resetPasswordForEmail(address, { redirectTo: 'earnzo://password-reset' });
+  if (error) throw error;
+  return data;
+}
+
 export async function signOutAuth() {
   if (!authConfigured) return;
   const { error } = await supabaseAuth.auth.signOut();
