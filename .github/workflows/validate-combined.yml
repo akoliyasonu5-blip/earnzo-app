@@ -101,6 +101,7 @@ jobs:
           node scripts/patch-upload-rules.js
           node scripts/patch-real-upload-progress.js
           node scripts/patch-social-polish-security.js
+          node scripts/patch-profile-community-experience.js
 
       - name: Confirm final patch markers
         run: |
@@ -124,6 +125,8 @@ jobs:
           grep -q "durationMs <= 90000" App.js
           grep -q "Earnzo real upload progress active" App.js
           grep -q "Earnzo social polish security active" App.js
+          grep -q "Earnzo profile community experience active" App.js
+          grep -q "Text Post" App.js
           test -s assets/earnzo-icon.png
           echo "Combined patch validation passed"
 
