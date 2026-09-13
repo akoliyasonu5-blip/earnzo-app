@@ -30,7 +30,9 @@ jobs:
           java-version: 17
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install --no-save react-native-webrtc@124.0.6 @config-plugins/react-native-webrtc@13.0.0
 
       - name: Apply Home feed fixes
         run: node scripts/patch-home-feed.js
@@ -115,6 +117,9 @@ jobs:
 
       - name: Apply secure login options
         run: node scripts/patch-secure-auth-options.js
+
+      - name: Apply voice and video calls
+        run: node scripts/patch-voice-video-calls.js
 
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
