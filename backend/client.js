@@ -25,7 +25,10 @@ async function request(path, options = {}, timeoutMs = 20000) {
     try { body = text ? JSON.parse(text) : null; } catch { body = text; }
     if (!response.ok) {
       const message = body?.error || body?.message || `Backend request failed (${response.status})`;
-      throw new Error(message);
+      const error = new Error(message);
+      error.status = response.status;
+      error.body = body;
+      throw error;
     }
     return body;
   } finally {
@@ -48,6 +51,11 @@ export async function upsertProfile(profile) {
 export async function fetchFeed(userId = "") {
   const q = userId ? `?userId=${encodeURIComponent(userId)}` : "";
   return request(`/v1/feed${q}`);
+}
+
+export async function fetchStories(userId = "") {
+  const q = userId ? `?userId=${encodeURIComponent(userId)}` : "";
+  return request(`/v1/stories${q}`);
 }
 
 function mediaPart(uri, kind = "video") {
@@ -75,6 +83,32 @@ export async function createPost(post) {
   });
 }
 
+export async function createStory(story, mediaUri) {
+  const mediaKind = story.mediaType === "video" ? "video" : "image";
+  const uploaded = mediaUri ? await uploadMedia(mediaUri, mediaKind) : null;
+  return createPost({
+    ...story,
+    kind: "story",
+    title: story.title || "Story",
+    mediaUri: uploaded?.url || mediaUri || "",
+    uploadedAt: Date.now(),
+  });
+}
+
+export async function updateRemotePost(postId, changes) {
+  return request(`/v1/posts/${encodeURIComponent(postId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(changes || {}),
+  });
+}
+
+export async function deleteRemotePost(postId) {
+  return request(`/v1/posts/${encodeURIComponent(postId)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function syncPostToBackend(post, mediaUri, coverUri) {
   if (!backendEnabled) return null;
   const mediaKind = post.mediaType === "photo" ? "image" : "video";
@@ -86,6 +120,45 @@ export async function syncPostToBackend(post, mediaUri, coverUri) {
     mediaUri: mediaUpload?.url || post.mediaUri || "",
     coverUri: coverUpload?.url || post.coverUri || mediaUpload?.thumbnailUrl || "",
     uploadedAt: Date.now(),
+  });
+}
+
+export async function recordRemoteView(postId, userId) {
+  return request(`/v1/posts/${encodeURIComponent(postId)}/view`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  });
+}
+
+export async function fetchCreatorStats(creatorId) {
+  return request(`/v1/creator-stats?creatorId=${encodeURIComponent(creatorId || "")}`);
+}
+
+export async function fetchMonetizationStatus(creatorId) {
+  return request(`/v1/monetization/status?creatorId=${encodeURIComponent(creatorId || "")}`);
+}
+
+export async function applyForMonetization(payload) {
+  return request("/v1/monetization/apply", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
+  });
+}
+
+export async function fetchWalletStatus(creatorId, currencyCode = "") {
+  const params = new URLSearchParams();
+  params.set("creatorId", creatorId || "");
+  if (currencyCode) params.set("currencyCode", currencyCode);
+  return request(`/v1/wallet?${params.toString()}`);
+}
+
+export async function requestCreatorPayout(payload) {
+  return request("/v1/payouts/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
   });
 }
 
@@ -113,6 +186,41 @@ export async function followRemoteUser(followerId, followingId) {
   });
 }
 
-export async function searchRemote(query) {
-  return request(`/v1/search?q=${encodeURIComponent(query || "")}`);
+export async function searchRemote(query, userId = "") {
+  const params = new URLSearchParams();
+  params.set("q", query || "");
+  if (userId) params.set("userId", userId);
+  return request(`/v1/search?${params.toString()}`);
+}
+
+export async function fetchBlockedCreators(userId) {
+  return request(`/v1/blocks?userId=${encodeURIComponent(userId || "")}`);
+}
+
+export async function toggleRemoteBlock(blockerId, blockedId) {
+  return request("/v1/blocks/toggle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ blockerId, blockedId }),
+  });
+}
+
+export async function submitRemoteReport(payload) {
+  return request("/v1/reports", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
+  });
+}
+
+export async function fetchNotifications(userId) {
+  return request(`/v1/notifications?userId=${encodeURIComponent(userId || "")}`);
+}
+
+export async function markNotificationsRead(userId) {
+  return request("/v1/notifications/read", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  });
 }

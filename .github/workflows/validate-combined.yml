@@ -1,0 +1,136 @@
+name: Validate Combined Patches
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - combined-test-build
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install backend dependencies
+        run: |
+          cd server
+          npm install
+
+      - name: Check backend server syntax
+        run: |
+          for f in server/*.js; do
+            node --check "$f"
+          done
+
+      - name: Confirm backend route markers
+        run: |
+          grep -q "/v1/stories" server/index-durable.js
+          grep -q "/v1/creator-stats" server/index-durable.js
+          grep -q "/v1/monetization/status" server/index-durable.js
+          grep -q "/v1/monetization/apply" server/index-durable.js
+          grep -q "/v1/wallet" server/index-durable.js
+          grep -q "/v1/payouts/request" server/index-durable.js
+          grep -q "/v1/blocks" server/index-durable.js
+          grep -q "/v1/reports" server/index-durable.js
+          grep -q "/v1/notifications" server/index-durable.js
+          grep -q "/v1/messages" server/index-durable.js
+          grep -q "/v1/creator-analytics" server/index-durable.js
+
+      - name: Generate Earnzo brand assets
+        run: node scripts/generate-brand-assets.js
+
+      - name: Check active patch script syntax
+        run: |
+          for f in scripts/*.js; do
+            if [ "$f" = "scripts/patch-trim.js" ]; then
+              continue
+            fi
+            node --check "$f"
+          done
+
+      - name: Apply all build-time patches
+        run: |
+          node scripts/patch-home-feed.js
+          node scripts/patch-editor.js
+          node scripts/patch-trim-range.js
+          node scripts/patch-filters-effects.js
+          node scripts/patch-audio-controls.js
+          node scripts/patch-crop-framing.js
+          node scripts/patch-backend-foundation.js
+          node scripts/patch-cloud-feed-sync.js
+          node scripts/patch-social-cloud-sync.js
+          node scripts/patch-search-profiles.js
+          node scripts/patch-photo-story-fixes.js
+          node scripts/patch-pull-refresh.js
+          node scripts/patch-creator-profile.js
+          node scripts/patch-saved-content.js
+          node scripts/patch-own-content-management.js
+          node scripts/patch-priority-experience.js
+          node scripts/patch-global-language-region-v2.js
+          node scripts/patch-creator-stats-views.js
+          node scripts/patch-monetization-application.js
+          node scripts/patch-notification-center.js
+          node scripts/patch-wallet-payout-flow.js
+          node scripts/patch-creator-drafts.js
+          node scripts/patch-moderation-safety.js
+          node scripts/patch-cloud-messaging.js
+          node scripts/patch-creator-analytics.js
+          node scripts/patch-social-graph.js
+          node scripts/patch-comment-keyboard.js
+          node scripts/patch-secure-auth-options.js
+          node scripts/patch-voice-video-calls.js
+          node scripts/patch-brand-logo.js
+          node scripts/patch-upload-rules.js
+          node scripts/patch-real-upload-progress.js
+
+      - name: Confirm final patch markers
+        run: |
+          grep -q "Earnzo pull refresh active" App.js
+          grep -q "Earnzo priority experience active" App.js
+          grep -q "Earnzo global language region active" App.js
+          grep -q "Earnzo creator stats views active" App.js
+          grep -q "Earnzo monetization application active" App.js
+          grep -q "Earnzo notification center active" App.js
+          grep -q "Earnzo wallet payout flow active" App.js
+          grep -q "Earnzo creator drafts active" App.js
+          grep -q "Earnzo moderation safety active" App.js
+          grep -q "Earnzo cloud messaging active" App.js
+          grep -q "Earnzo creator analytics active" App.js
+          grep -q "Earnzo social graph active" App.js
+          grep -q "Earnzo comment keyboard fix active" App.js
+          grep -q "Earnzo secure auth options active" App.js
+          grep -q "Earnzo WebRTC calls active" App.js
+          grep -q "Earnzo brand logo active" App.js
+          grep -q "Earnzo upload rules active" App.js
+          grep -q "durationMs <= 90000" App.js
+          grep -q "Earnzo real upload progress active" App.js
+          test -s assets/earnzo-icon.png
+          echo "Combined patch validation passed"
+
+      - name: Validate Expo config
+        run: npx expo config --type public > /tmp/earnzo-expo-config.txt
+
+      - name: Create Android project
+        run: npx expo prebuild --platform android --non-interactive
+
+      - name: Compile Android debug build
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon

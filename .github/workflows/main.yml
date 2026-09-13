@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EXPO_PUBLIC_EARNZO_API_URL: https://earnzo-backend.onrender.com
+      EXPO_PUBLIC_SUPABASE_URL: https://zingvsvbqboajvsphzqt.supabase.co
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_t_jUp4-ENsAUl0ljivz3yg_AVMYwOKY
 
     steps:
       - name: Checkout code
@@ -29,6 +31,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Generate Earnzo brand assets
+        run: node scripts/generate-brand-assets.js
 
       - name: Apply Home feed fixes
         run: node scripts/patch-home-feed.js
@@ -59,6 +64,72 @@ jobs:
 
       - name: Apply cloud search and profile sync
         run: node scripts/patch-search-profiles.js
+
+      - name: Apply photo and story fixes
+        run: node scripts/patch-photo-story-fixes.js
+
+      - name: Apply pull to refresh
+        run: node scripts/patch-pull-refresh.js
+
+      - name: Apply creator profiles
+        run: node scripts/patch-creator-profile.js
+
+      - name: Apply saved content
+        run: node scripts/patch-saved-content.js
+
+      - name: Apply creator post management
+        run: node scripts/patch-own-content-management.js
+
+      - name: Apply priority experience
+        run: node scripts/patch-priority-experience.js
+
+      - name: Apply global language and region
+        run: node scripts/patch-global-language-region-v2.js
+
+      - name: Apply creator stats and valid views
+        run: node scripts/patch-creator-stats-views.js
+
+      - name: Apply monetization application flow
+        run: node scripts/patch-monetization-application.js
+
+      - name: Apply detailed notification center
+        run: node scripts/patch-notification-center.js
+
+      - name: Apply creator wallet and payout flow
+        run: node scripts/patch-wallet-payout-flow.js
+
+      - name: Apply creator drafts
+        run: node scripts/patch-creator-drafts.js
+
+      - name: Apply moderation and safety
+        run: node scripts/patch-moderation-safety.js
+
+      - name: Apply cloud messaging
+        run: node scripts/patch-cloud-messaging.js
+
+      - name: Apply creator analytics
+        run: node scripts/patch-creator-analytics.js
+
+      - name: Apply social graph
+        run: node scripts/patch-social-graph.js
+
+      - name: Fix comment keyboard composer
+        run: node scripts/patch-comment-keyboard.js
+
+      - name: Apply secure login options
+        run: node scripts/patch-secure-auth-options.js
+
+      - name: Apply voice and video calls
+        run: node scripts/patch-voice-video-calls.js
+
+      - name: Apply Earnzo brand logo
+        run: node scripts/patch-brand-logo.js
+
+      - name: Apply upload duration and size rules
+        run: node scripts/patch-upload-rules.js
+
+      - name: Apply real upload progress
+        run: node scripts/patch-real-upload-progress.js
 
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
