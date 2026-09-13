@@ -9,8 +9,11 @@ if (code.includes('Earnzo comment keyboard fix active')) {
 }
 
 const start = code.indexOf('function CommentsModal(');
-const end = code.indexOf('function People(', start);
-if (start < 0 || end < 0) throw new Error('Comment keyboard patch failed: CommentsModal/People anchors not found');
+if (start < 0) throw new Error('Comment keyboard patch failed: CommentsModal not found');
+const tail = code.slice(start + 1);
+const nextFunction = tail.match(/\nfunction\s+[A-Za-z0-9_]+\s*\(/);
+if (!nextFunction || nextFunction.index == null) throw new Error('Comment keyboard patch failed: next component boundary not found');
+const end = start + 1 + nextFunction.index + 1;
 
 const replacement = `function CommentsModal({ visible, close, post, value, setValue, send }) { // Earnzo comment keyboard fix active
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={close} statusBarTranslucent>
