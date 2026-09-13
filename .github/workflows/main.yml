@@ -102,6 +102,9 @@ jobs:
       - name: Apply cloud messaging
         run: node scripts/patch-cloud-messaging.js
 
+      - name: Apply creator analytics
+        run: node scripts/patch-creator-analytics.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
