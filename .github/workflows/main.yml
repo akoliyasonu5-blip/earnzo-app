@@ -138,6 +138,9 @@ jobs:
       - name: Apply social polish and security
         run: node scripts/patch-social-polish-security.js
 
+      - name: Apply profile community experience
+        run: node scripts/patch-profile-community-experience.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
