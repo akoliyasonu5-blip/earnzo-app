@@ -13,46 +13,66 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply patch chain
+      - name: Install parser dependencies
+        run: npm install
+      - name: Find first patch that breaks App parsing
+        shell: bash
         run: |
-          node scripts/patch-home-feed.js
-          node scripts/patch-editor.js
-          node scripts/patch-trim-range.js
-          node scripts/patch-filters-effects.js
-          node scripts/patch-audio-controls.js
-          node scripts/patch-crop-framing.js
-          node scripts/patch-backend-foundation.js
-          node scripts/patch-cloud-feed-sync.js
-          node scripts/patch-social-cloud-sync.js
-          node scripts/patch-search-profiles.js
-          node scripts/patch-photo-story-fixes.js
-          node scripts/patch-pull-refresh.js
-          node scripts/patch-creator-profile.js
-          node scripts/patch-saved-content.js
-          node scripts/patch-own-content-management.js
-          node scripts/patch-priority-experience.js
-          node scripts/patch-global-language-region-v2.js
-          node scripts/patch-creator-stats-views.js
-          node scripts/patch-monetization-application.js
-          node scripts/patch-notification-center.js
-          node scripts/patch-wallet-payout-flow.js
-          node scripts/patch-creator-drafts.js
-          node scripts/patch-moderation-safety.js
-          node scripts/patch-cloud-messaging.js
-          node scripts/patch-creator-analytics.js
-          node scripts/patch-social-graph.js
-          node scripts/patch-comment-keyboard.js
-          node scripts/patch-secure-auth-options.js
-          node scripts/patch-voice-video-calls.js
-          node scripts/patch-brand-logo.js
-          node scripts/patch-upload-rules.js
-          node scripts/patch-real-upload-progress.js
-      - name: Show final App tail
-        run: |
-          echo '--- App.js lines 1400-end ---'
-          nl -ba App.js | sed -n '1400,1520p'
-          echo '--- brace counts ---'
-          python3 - <<'PY'
-          s=open('App.js',encoding='utf-8').read()
-          for c in '{}()[]': print(c, s.count(c))
-          PY
+          set -euo pipefail
+          parse_app() {
+            PATCH_NAME="$1" node - <<'NODE'
+          const fs = require('fs');
+          const parser = require('@babel/parser');
+          const name = process.env.PATCH_NAME || 'unknown';
+          try {
+            parser.parse(fs.readFileSync('App.js', 'utf8'), {
+              sourceType: 'module',
+              plugins: ['jsx', 'optionalChaining', 'nullishCoalescingOperator', 'objectRestSpread'],
+            });
+            console.log('PARSE_OK_AFTER=' + name);
+          } catch (error) {
+            console.error('PARSE_FAILED_AFTER=' + name);
+            console.error(error.message);
+            if (error.loc) console.error('LOCATION=' + error.loc.line + ':' + error.loc.column);
+            process.exit(1);
+          }
+          NODE
+          }
+          apply_patch() {
+            f="$1"
+            node "$f"
+            parse_app "$f"
+          }
+          parse_app base
+          apply_patch scripts/patch-home-feed.js
+          apply_patch scripts/patch-editor.js
+          apply_patch scripts/patch-trim-range.js
+          apply_patch scripts/patch-filters-effects.js
+          apply_patch scripts/patch-audio-controls.js
+          apply_patch scripts/patch-crop-framing.js
+          apply_patch scripts/patch-backend-foundation.js
+          apply_patch scripts/patch-cloud-feed-sync.js
+          apply_patch scripts/patch-social-cloud-sync.js
+          apply_patch scripts/patch-search-profiles.js
+          apply_patch scripts/patch-photo-story-fixes.js
+          apply_patch scripts/patch-pull-refresh.js
+          apply_patch scripts/patch-creator-profile.js
+          apply_patch scripts/patch-saved-content.js
+          apply_patch scripts/patch-own-content-management.js
+          apply_patch scripts/patch-priority-experience.js
+          apply_patch scripts/patch-global-language-region-v2.js
+          apply_patch scripts/patch-creator-stats-views.js
+          apply_patch scripts/patch-monetization-application.js
+          apply_patch scripts/patch-notification-center.js
+          apply_patch scripts/patch-wallet-payout-flow.js
+          apply_patch scripts/patch-creator-drafts.js
+          apply_patch scripts/patch-moderation-safety.js
+          apply_patch scripts/patch-cloud-messaging.js
+          apply_patch scripts/patch-creator-analytics.js
+          apply_patch scripts/patch-social-graph.js
+          apply_patch scripts/patch-comment-keyboard.js
+          apply_patch scripts/patch-secure-auth-options.js
+          apply_patch scripts/patch-voice-video-calls.js
+          apply_patch scripts/patch-brand-logo.js
+          apply_patch scripts/patch-upload-rules.js
+          apply_patch scripts/patch-real-upload-progress.js
