@@ -125,6 +125,9 @@ jobs:
       - name: Apply Earnzo brand logo
         run: node scripts/patch-brand-logo.js
 
+      - name: Apply upload duration and size rules
+        run: node scripts/patch-upload-rules.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
