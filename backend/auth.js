@@ -23,6 +23,13 @@ function ensureConfigured() {
   if (!authConfigured) throw new Error('Secure login is not configured in this build.');
 }
 
+export async function getAuthSession() {
+  if (!authConfigured) return null;
+  const { data, error } = await supabaseAuth.auth.getSession();
+  if (error) throw error;
+  return data?.session || null;
+}
+
 export async function signInEmail(email, password) {
   ensureConfigured();
   const { data, error } = await supabaseAuth.auth.signInWithPassword({ email: String(email || '').trim().toLowerCase(), password });
