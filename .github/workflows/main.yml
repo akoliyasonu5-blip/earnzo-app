@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       EXPO_PUBLIC_EARNZO_API_URL: https://earnzo-backend.onrender.com
+      EXPO_PUBLIC_SUPABASE_URL: https://zingvsvbqboajvsphzqt.supabase.co
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_t_jUp4-ENsAUl0ljivz3yg_AVMYwOKY
 
     steps:
       - name: Checkout code
@@ -107,6 +109,12 @@ jobs:
 
       - name: Apply social graph
         run: node scripts/patch-social-graph.js
+
+      - name: Fix comment keyboard composer
+        run: node scripts/patch-comment-keyboard.js
+
+      - name: Apply secure login options
+        run: node scripts/patch-secure-auth-options.js
 
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
