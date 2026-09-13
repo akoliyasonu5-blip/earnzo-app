@@ -19,7 +19,8 @@ function uploadMediaWithProgress(uri, kind, start, end, onProgress) {
     form.append("kind", kind);
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_URL}/v1/media`);
-    xhr.timeout = 300000;
+    // Long videos can take much longer on mobile data. Keep the session alive up to 1 hour.
+    xhr.timeout = 60 * 60 * 1000;
     xhr.upload.onprogress = (event) => {
       if (!event.lengthComputable || !event.total) return;
       const ratio = Math.max(0, Math.min(1, event.loaded / event.total));
