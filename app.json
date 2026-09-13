@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Earnzo",
+    "slug": "earnzo",
+    "scheme": "earnzo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "android": {
+      "package": "com.earnzo.app",
+      "softwareKeyboardLayoutMode": "resize",
+      "permissions": ["CAMERA", "RECORD_AUDIO"]
+    },
+    "plugins": [
+      [
+        "expo-web-browser",
+        {
+          "experimentalLauncherActivity": false
+        }
+      ]
+    ]
+  }
+}
