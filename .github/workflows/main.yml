@@ -30,9 +30,10 @@ jobs:
           java-version: 17
 
       - name: Install dependencies
-        run: |
-          npm install
-          npm install --no-save react-native-webrtc@124.0.6 @config-plugins/react-native-webrtc@13.0.0
+        run: npm install
+
+      - name: Generate Earnzo brand assets
+        run: node scripts/generate-brand-assets.js
 
       - name: Apply Home feed fixes
         run: node scripts/patch-home-feed.js
@@ -120,6 +121,9 @@ jobs:
 
       - name: Apply voice and video calls
         run: node scripts/patch-voice-video-calls.js
+
+      - name: Apply Earnzo brand logo
+        run: node scripts/patch-brand-logo.js
 
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
