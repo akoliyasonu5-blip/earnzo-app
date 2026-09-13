@@ -95,7 +95,7 @@ replaceOnce(
   '<People visible={!!peopleModal} title={peopleModal} close={() => setPeopleModal("")} people={peopleModal === "Followers" ? socialGraph.followers : socialGraph.following} loading={peopleLoading} currentUser={cloudUserId} onCreator={(person) => { setPeopleModal(""); openPublicCreator(person); }} onFollow={toggleSocialPerson} />'
 );
 
-const peopleRegex = /function People\(\{ visible, title, close \}\) \{[\s\S]*?\nfunction SheetHeader/;
+const peopleRegex = /function People\(\{ visible, title, close \}\) \{[\s\S]*?function SheetHeader/;
 if (!peopleRegex.test(code)) throw new Error('Social graph patch failed: People component not found');
 const peopleComponent = `function People({ visible, title, close, people, loading, currentUser, onCreator, onFollow }) {
   const rows = Array.isArray(people) ? people : [];
