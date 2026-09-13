@@ -72,5 +72,33 @@ replaceFunction('BottomNav', `function BottomNav({ tab, setTab, openSearch }) {
   })}</View>;
 }`);
 
+// Final photo behavior: keep the complete uploaded photo visible in-feed and make every photo tappable.
+replaceFunction('PhotoFeedMedia', `function PhotoFeedMedia({ post }) {
+  const [open, setOpen] = useState(false);
+  const [ratio, setRatio] = useState(1);
+  const onPhotoLoad = (e) => {
+    const w = Number(e?.nativeEvent?.source?.width || 0);
+    const h = Number(e?.nativeEvent?.source?.height || 0);
+    if (w > 0 && h > 0) setRatio(Math.max(0.55, Math.min(1.8, w / h)));
+  };
+  return <>
+    <Pressable onPress={() => setOpen(true)} style={{ width: '100%', backgroundColor: '#000' }} hitSlop={4}>
+      <Image source={{ uri: post.mediaUri }} onLoad={onPhotoLoad} style={{ width: '100%', aspectRatio: ratio, backgroundColor: '#000' }} resizeMode="contain" />
+      <View pointerEvents="none" style={{ position: 'absolute', right: 12, bottom: 12, width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: '#FFF', fontSize: 20, fontWeight: '900' }}>⛶</Text></View>
+    </Pressable>
+    <Modal visible={open} animationType="fade" onRequestClose={() => setOpen(false)} statusBarTranslucent>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
+        <View style={{ minHeight: 58, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#000' }}>
+          <Text numberOfLines={1} style={{ color: '#FFF', fontSize: 16, fontWeight: '900', flex: 1, marginRight: 12 }}>{post.title || 'Photo'}</Text>
+          <Pressable onPress={() => setOpen(false)} hitSlop={12}><Text style={{ color: '#FFF', fontSize: 28, padding: 6 }}>✕</Text></Pressable>
+        </View>
+        <Pressable style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }} onPress={() => setOpen(false)}>
+          <Image source={{ uri: post.mediaUri }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+        </Pressable>
+      </SafeAreaView>
+    </Modal>
+  </>;
+}`);
+
 fs.writeFileSync(path, code, 'utf8');
-console.log('Earnzo clean discovery navigation applied: no Home filter chips, automatic short routing, working Search, branded Creator Hub.');
+console.log('Earnzo clean discovery navigation applied: no Home filter chips, automatic short routing, working Search, branded Creator Hub, full-view tappable photos.');
