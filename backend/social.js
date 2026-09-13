@@ -32,5 +32,5 @@ export async function fetchSocialGraph(userId, viewerId = userId) {
   const params = new URLSearchParams();
   params.set("userId", userId || "");
   if (viewerId) params.set("viewerId", viewerId);
-  return request(`/v1/social?${params.toString()}`);
+  return request(`/v1/messages/social?${params.toString()}`);
 }
