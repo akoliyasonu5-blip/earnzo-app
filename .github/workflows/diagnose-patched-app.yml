@@ -1,0 +1,58 @@
+name: Diagnose Patched App
+
+on:
+  push:
+    branches:
+      - combined-test-build
+    paths:
+      - .github/workflows/diagnose-patched-app.yml
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply patch chain
+        run: |
+          node scripts/patch-home-feed.js
+          node scripts/patch-editor.js
+          node scripts/patch-trim-range.js
+          node scripts/patch-filters-effects.js
+          node scripts/patch-audio-controls.js
+          node scripts/patch-crop-framing.js
+          node scripts/patch-backend-foundation.js
+          node scripts/patch-cloud-feed-sync.js
+          node scripts/patch-social-cloud-sync.js
+          node scripts/patch-search-profiles.js
+          node scripts/patch-photo-story-fixes.js
+          node scripts/patch-pull-refresh.js
+          node scripts/patch-creator-profile.js
+          node scripts/patch-saved-content.js
+          node scripts/patch-own-content-management.js
+          node scripts/patch-priority-experience.js
+          node scripts/patch-global-language-region-v2.js
+          node scripts/patch-creator-stats-views.js
+          node scripts/patch-monetization-application.js
+          node scripts/patch-notification-center.js
+          node scripts/patch-wallet-payout-flow.js
+          node scripts/patch-creator-drafts.js
+          node scripts/patch-moderation-safety.js
+          node scripts/patch-cloud-messaging.js
+          node scripts/patch-creator-analytics.js
+          node scripts/patch-social-graph.js
+          node scripts/patch-comment-keyboard.js
+          node scripts/patch-secure-auth-options.js
+          node scripts/patch-voice-video-calls.js
+          node scripts/patch-brand-logo.js
+          node scripts/patch-upload-rules.js
+          node scripts/patch-real-upload-progress.js
+      - name: Show final App tail
+        run: |
+          echo '--- App.js lines 1400-end ---'
+          nl -ba App.js | sed -n '1400,1520p'
+          echo '--- brace counts ---'
+          python3 - <<'PY'
+          s=open('App.js',encoding='utf-8').read()
+          for c in '{}()[]': print(c, s.count(c))
+          PY
