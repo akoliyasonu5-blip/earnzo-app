@@ -1,0 +1,40 @@
+name: Earnzo Live Backend Smoke
+
+on:
+  push:
+    branches:
+      - combined-test-build
+    paths:
+      - .github/workflows/live-backend-smoke.yml
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check live Earnzo backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://earnzo-backend.onrender.com"
+          check() {
+            path="$1"
+            echo "Checking $path"
+            body="$(curl --fail --silent --show-error --retry 3 --retry-delay 2 --max-time 30 "$BASE$path")"
+            test -n "$body"
+            printf '%s\n' "$body" | head -c 1000
+            echo
+          }
+          check "/health"
+          check "/v1/feed?userId=%40qa-smoke"
+          check "/v1/stories?userId=%40qa-smoke"
+          check "/v1/creator-stats?creatorId=%40qa-smoke"
+          check "/v1/monetization/status?creatorId=%40qa-smoke"
+          check "/v1/wallet?creatorId=%40qa-smoke&currencyCode=INR"
+          check "/v1/blocks?userId=%40qa-smoke"
+          check "/v1/notifications?userId=%40qa-smoke"
+          check "/v1/search?q=qa&userId=%40qa-smoke"
+          check "/v1/messages?userId=%40qa-smoke"
+          check "/v1/messages/social?userId=%40qa-smoke&viewerId=%40qa-smoke"
+          check "/v1/creator-analytics?creatorId=%40qa-smoke"
+          echo "Earnzo live backend smoke checks passed"
