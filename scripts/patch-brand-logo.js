@@ -15,7 +15,9 @@ if (!code.includes(brandLogo)) throw new Error('Brand logo patch failed: auth lo
 
 code = code.replace(headerLogo, '<View style={[styles.logoBox, { overflow: "hidden" }]}><Image source={require("./assets/earnzo-icon.png")} style={styles.fill} resizeMode="cover" /></View>');
 code = code.replace(brandLogo, '<View style={[styles.bigLogo, { overflow: "hidden", backgroundColor: "transparent" }]}><Image source={require("./assets/earnzo-icon.png")} style={styles.fill} resizeMode="cover" /></View>');
-code = code.replace('function Brand() {', 'function Brand() { // Earnzo brand logo active');
+// Brand() is intentionally one line in the base App. Use a block comment so the
+// remainder of the function is not accidentally commented out.
+code = code.replace('function Brand() {', 'function Brand() { /* Earnzo brand logo active */');
 
 fs.writeFileSync(path, code, 'utf8');
 console.log('Earnzo brand logo applied to header and authentication screens.');
