@@ -1,20 +1,21 @@
-const SUPABASE_URL = (process.env.EXPO_PUBLIC_SUPABASE_URL || "").replace(/\/$/, "");
-const SUPABASE_KEY = (process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "").trim();
-const SUPPORT_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/earnzo-support` : "";
+const API_URL = (process.env.EXPO_PUBLIC_EARNZO_API_URL || "").replace(/\/$/, "");
+const API_KEY = process.env.EXPO_PUBLIC_EARNZO_API_KEY || "";
 
-async function request(action, payload = {}, timeoutMs = 20000) {
-  if (!SUPPORT_URL || !SUPABASE_KEY) throw new Error("Earnzo support service is not configured");
+function headers(extra = {}) {
+  return {
+    ...(API_KEY ? { "x-earnzo-key": API_KEY } : {}),
+    ...extra,
+  };
+}
+
+async function request(path, options = {}, timeoutMs = 20000) {
+  if (!API_URL) throw new Error("Earnzo backend is not configured");
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(SUPPORT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        apikey: SUPABASE_KEY,
-      },
-      body: JSON.stringify({ action, payload }),
+    const response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: headers(options.headers || {}),
       signal: controller.signal,
     });
     const text = await response.text();
@@ -28,9 +29,13 @@ async function request(action, payload = {}, timeoutMs = 20000) {
 }
 
 export async function fetchSupportRequests(userId) {
-  return request("list", { userId });
+  return request(`/v1/support?userId=${encodeURIComponent(userId || "")}`);
 }
 
 export async function submitSupportRequest(payload) {
-  return request("create", payload || {});
+  return request("/v1/support", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
+  });
 }
