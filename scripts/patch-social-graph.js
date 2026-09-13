@@ -92,12 +92,12 @@ replaceOnce(
 replaceOnce(
   'people modal props',
   '<People visible={!!peopleModal} title={peopleModal} close={() => setPeopleModal("")} />',
-  '<People visible={!!peopleModal} title={peopleModal} close={() => setPeopleModal("")} people={peopleModal === "Followers" ? socialGraph.followers : socialGraph.following} loading={peopleLoading} currentUser={cloudUserId} onCreator={(person) => { setPeopleModal(""); openPublicCreator(person); }} onFollow={toggleSocialPerson} />'
+  '<SocialPeopleModal visible={!!peopleModal} title={peopleModal} close={() => setPeopleModal("")} people={peopleModal === "Followers" ? socialGraph.followers : socialGraph.following} loading={peopleLoading} currentUser={cloudUserId} onCreator={(person) => { setPeopleModal(""); openPublicCreator(person); }} onFollow={toggleSocialPerson} />'
 );
 
-const peopleRegex = /function People\(\{ visible, title, close \}\) \{[\s\S]*?function SheetHeader/;
-if (!peopleRegex.test(code)) throw new Error('Social graph patch failed: People component not found');
-const peopleComponent = `function People({ visible, title, close, people, loading, currentUser, onCreator, onFollow }) {
+const sheetAnchor = 'function SheetHeader({ title, close }) {';
+if (!code.includes(sheetAnchor)) throw new Error('Social graph patch failed: SheetHeader anchor not found');
+const peopleComponent = `function SocialPeopleModal({ visible, title, close, people, loading, currentUser, onCreator, onFollow }) {
   const rows = Array.isArray(people) ? people : [];
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}><View style={styles.modalBg}><View style={[styles.sheet, { maxHeight: "78%" }]}><SheetHeader title={title} close={close} /><ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
     {loading ? <View style={styles.emptyCard}><Text style={styles.bold}>Loading {title?.toLowerCase()}...</Text><Text style={styles.muted}>Cloud social graph sync ho raha hai.</Text></View> : null}
@@ -105,8 +105,9 @@ const peopleComponent = `function People({ visible, title, close, people, loadin
     {rows.map((p) => { const id = String(p.handle || p.id || "").trim(); const mine = id === currentUser; return <View key={id || p.name} style={styles.person}><Pressable onPress={() => onCreator(p)} style={styles.avatar}>{p.profilePhoto ? <Image source={{ uri: p.profilePhoto }} style={styles.fill} /> : <Text style={styles.avatarText}>{String(p.name || id || "E")[0].toUpperCase()}</Text>}</Pressable><Pressable onPress={() => onCreator(p)} style={{ flex: 1 }}><Text style={styles.bold}>{p.name || id || "Creator"}</Text><Text style={styles.muted}>{id}</Text></Pressable>{!mine ? <Pressable onPress={() => onFollow(p)} style={[styles.smallPurple, p.following && { backgroundColor: "#EDEEF3" }]}><Text style={[styles.primaryText, p.following && { color: C.text }]}>{p.following ? "Following" : "Follow"}</Text></Pressable> : null}</View>; })}
   </ScrollView></View></View></Modal>;
 }
-function SheetHeader`;
-code = code.replace(peopleRegex, peopleComponent);
+
+`;
+code = code.replace(sheetAnchor, peopleComponent + sheetAnchor);
 
 fs.writeFileSync(path, code, 'utf8');
 console.log('Earnzo social graph applied: real followers/following counts, cloud lists, creator opening and follow toggles.');
