@@ -105,6 +105,9 @@ jobs:
       - name: Apply creator analytics
         run: node scripts/patch-creator-analytics.js
 
+      - name: Apply social graph
+        run: node scripts/patch-social-graph.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
