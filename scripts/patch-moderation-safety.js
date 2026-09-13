@@ -121,7 +121,9 @@ replaceOnce(
   '<BlockedCreatorsModal visible={blockedOpen} close={() => setBlockedOpen(false)} items={blockedCreators} onUnblock={onUnblock} /><Modal visible={editOpen} transparent animationType="slide" onRequestClose={() => setEditOpen(false)}>'
 );
 
-const reportRegex = /function ReportModal\(\{ target, close \}\) \{[\s\S]*?\nfunction SupportItem/;
+// IMPORTANT: only replace ReportModal itself. Older regex used SupportItem as the end
+// anchor and accidentally removed StoryViewer, CommentsModal, People and SheetHeader.
+const reportRegex = /function ReportModal\(\{ target, close \}\) \{[\s\S]*?\nfunction StoryViewer/;
 if (!reportRegex.test(code)) throw new Error('Moderation patch failed: ReportModal block not found');
 const reportBlock = `function BlockedCreatorsModal({ visible, close, items, onUnblock }) {
   return <Modal visible={visible} animationType="slide" onRequestClose={close}><SafeAreaView style={{ flex: 1, backgroundColor: "#FFF" }}><View style={{ minHeight: 58, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "#E7E8EF" }}><Pressable onPress={close}><Text style={{ fontSize: 30 }}>‹</Text></Pressable><Text style={{ fontWeight: "900", fontSize: 18 }}>Blocked Creators</Text><Text style={{ color: C.muted }}>{items.length}</Text></View><ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 50 }}>{!items.length ? <View style={styles.emptyCard}><Text style={styles.bold}>No blocked creators</Text><Text style={styles.muted}>Blocked accounts yahan manage honge.</Text></View> : items.map((id) => <View key={id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: "#F0F0F3" }}><View><Text style={{ fontWeight: "900", color: C.text }}>{id}</Text><Text style={{ color: C.muted, fontSize: 11, marginTop: 3 }}>Content and notifications hidden</Text></View><Pressable onPress={() => onUnblock(id)} style={{ paddingHorizontal: 13, paddingVertical: 8, borderRadius: 14, backgroundColor: C.purpleSoft }}><Text style={{ color: C.purple, fontWeight: "900" }}>Unblock</Text></Pressable></View>)}</ScrollView></SafeAreaView></Modal>;
@@ -143,9 +145,9 @@ function ReportModal({ target, reporterId, close }) {
       Alert.alert("Report failed", String(e?.message || e || "Please try again"));
     } finally { setSubmitting(false); }
   };
-  return <Modal visible={!!target} transparent animationType="slide" onRequestClose={close}><View style={styles.modalBg}><View style={styles.sheet}><SheetHeader title={\`Report ${'${target.type}'}\`} close={close} /><Text style={styles.helpText}>{target.title || "Select a reason"}</Text><View style={styles.rowWrap}>{reportReasons.map((x) => <Chip key={x} text={x} active={reason === x} onPress={() => setReason(x)} />)}</View><TextInput style={[styles.bigInput, { marginTop: 10 }]} multiline placeholder="Optional details..." value={details} onChangeText={setDetails} /><Pressable disabled={submitting} style={[styles.dangerButton, submitting && { opacity: 0.5 }]} onPress={submit}><Text style={styles.dangerText}>{submitting ? "Submitting..." : "Submit Report"}</Text></Pressable></View></View></Modal>;
+  return <Modal visible={!!target} transparent animationType="slide" onRequestClose={close}><View style={styles.modalBg}><View style={styles.sheet}><SheetHeader title={`Report ${target.type}`} close={close} /><Text style={styles.helpText}>{target.title || "Select a reason"}</Text><View style={styles.rowWrap}>{reportReasons.map((x) => <Chip key={x} text={x} active={reason === x} onPress={() => setReason(x)} />)}</View><TextInput style={[styles.bigInput, { marginTop: 10 }]} multiline placeholder="Optional details..." value={details} onChangeText={setDetails} /><Pressable disabled={submitting} style={[styles.dangerButton, submitting && { opacity: 0.5 }]} onPress={submit}><Text style={styles.dangerText}>{submitting ? "Submitting..." : "Submit Report"}</Text></Pressable></View></View></Modal>;
 }
-function SupportItem`;
+function StoryViewer`;
 code = code.replace(reportRegex, reportBlock);
 
 fs.writeFileSync(path, code, 'utf8');
