@@ -97,6 +97,7 @@ jobs:
           node scripts/patch-voice-video-calls.js
           node scripts/patch-brand-logo.js
           node scripts/patch-upload-rules.js
+          node scripts/patch-real-upload-progress.js
 
       - name: Confirm final patch markers
         run: |
@@ -118,6 +119,7 @@ jobs:
           grep -q "Earnzo brand logo active" App.js
           grep -q "Earnzo upload rules active" App.js
           grep -q "durationMs <= 90000" App.js
+          grep -q "Earnzo real upload progress active" App.js
           test -s assets/earnzo-icon.png
           echo "Combined patch validation passed"
 
