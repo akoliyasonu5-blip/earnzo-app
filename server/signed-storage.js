@@ -3,7 +3,9 @@ const fs = require('fs');
 const SIGN_URL = (process.env.SUPABASE_SIGN_UPLOAD_URL || '').trim();
 const ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
 const BUCKET = (process.env.SUPABASE_STORAGE_BUCKET || 'earnzo-media').trim();
-const MAX_FILE_BYTES = Number(process.env.SUPABASE_MAX_FILE_BYTES || 50 * 1024 * 1024);
+// 0 means Earnzo itself does not impose a file-size cap. The actual provider,
+// project global limit and bucket limit remain authoritative.
+const MAX_FILE_BYTES = Number(process.env.SUPABASE_MAX_FILE_BYTES || 0);
 
 function enabled() {
   return Boolean(SIGN_URL && ANON_KEY);
@@ -52,9 +54,10 @@ async function uploadToSignedUrl(file, signed) {
 
 async function uploadViaSignedTus(file) {
   if (!enabled()) return null;
-  if (Number(file.size || 0) > MAX_FILE_BYTES) {
+  if (MAX_FILE_BYTES > 0 && Number(file.size || 0) > MAX_FILE_BYTES) {
     const mb = Math.ceil(Number(file.size || 0) / (1024 * 1024));
-    throw new Error(`Video ${mb} MB hai. Supabase Free plan me maximum 50 MB file upload ho sakti hai. Chhota/compressed video select karein.`);
+    const maxMb = Math.ceil(MAX_FILE_BYTES / (1024 * 1024));
+    throw new Error(`Video ${mb} MB hai. Configured storage limit ${maxMb} MB hai.`);
   }
   const signed = await getSignedUpload(file);
   const publicUrl = await uploadToSignedUrl(file, signed);
