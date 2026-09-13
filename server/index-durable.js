@@ -19,6 +19,7 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(ROOT, 'uploads');
 const API_KEY = process.env.EARNZO_API_KEY || '';
 const DATA_URL = (process.env.SUPABASE_DATA_FUNCTION_URL || '').trim();
 const MONETIZATION_URL = (process.env.SUPABASE_MONETIZATION_FUNCTION_URL || (DATA_URL ? DATA_URL.replace(/earnzo-data\/?$/, 'earnzo-monetization') : '')).trim();
+const SUPPORT_URL = (process.env.SUPABASE_SUPPORT_FUNCTION_URL || (DATA_URL ? DATA_URL.replace(/earnzo-data\/?$/, 'earnzo-support') : '')).trim();
 const ANON_KEY = (process.env.SUPABASE_ANON_KEY || '').trim();
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -62,6 +63,7 @@ async function callFunction(url, action, payload = {}) {
 
 const callData = (action, payload = {}) => callFunction(DATA_URL, action, payload);
 const callMonetization = (action, payload = {}) => callFunction(MONETIZATION_URL, action, payload);
+const callSupport = (action, payload = {}) => callFunction(SUPPORT_URL, action, payload);
 
 app.get('/health', async (_req, res) => {
   try {
@@ -69,12 +71,13 @@ app.get('/health', async (_req, res) => {
     res.json({
       ok: true,
       service: 'earnzo-backend',
-      version: '1.0.0',
+      version: '1.1.0',
       database: data.body?.database || 'supabase-postgres',
       mediaStorage: signedStorageEnabled() ? 'supabase-storage' : 'not-configured',
       monetizationService: MONETIZATION_URL ? 'configured' : 'not-configured',
       messagingService: DATA_URL ? 'configured' : 'not-configured',
       analyticsService: DATA_URL ? 'configured' : 'not-configured',
+      supportService: SUPPORT_URL ? 'configured' : 'not-configured',
     });
   } catch (e) {
     res.status(503).json({ ok: false, error: e?.message || 'Backend unavailable' });
@@ -258,6 +261,26 @@ app.post('/v1/notifications/read', async (req, res, next) => {
 app.get('/v1/search', async (req, res, next) => {
   try {
     const out = await callData('search', { q: String(req.query.q || ''), userId: String(req.query.userId || '') });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.get('/v1/support', async (req, res, next) => {
+  try {
+    const userId = String(req.query.userId || '').trim();
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    const out = await callSupport('list', { userId });
+    res.status(out.status).json(out.body);
+  } catch (e) { next(e); }
+});
+
+app.post('/v1/support', async (req, res, next) => {
+  try {
+    const body = req.body || {};
+    const userId = String(body.userId || '').trim();
+    const message = String(body.message || '').trim();
+    if (!userId || !message) return res.status(400).json({ error: 'userId and message required' });
+    const out = await callSupport('create', body);
     res.status(out.status).json(out.body);
   } catch (e) { next(e); }
 });
