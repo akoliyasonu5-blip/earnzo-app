@@ -13,6 +13,7 @@ jobs:
       EXPO_PUBLIC_EARNZO_API_URL: https://earnzo-backend.onrender.com
       EXPO_PUBLIC_SUPABASE_URL: https://zingvsvbqboajvsphzqt.supabase.co
       EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_t_jUp4-ENsAUl0ljivz3yg_AVMYwOKY
+      EXPO_PUBLIC_ENABLE_TEST_LOGIN: "true"
 
     steps:
       - name: Checkout code
@@ -118,6 +119,9 @@ jobs:
 
       - name: Apply secure login options
         run: node scripts/patch-secure-auth-options.js
+
+      - name: Apply auth provider fallback for testing
+        run: node scripts/patch-auth-provider-fallback.js
 
       - name: Apply voice and video calls
         run: node scripts/patch-voice-video-calls.js
