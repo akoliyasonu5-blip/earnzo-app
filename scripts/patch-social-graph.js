@@ -95,8 +95,8 @@ replaceOnce(
   '<SocialPeopleModal visible={!!peopleModal} title={peopleModal} close={() => setPeopleModal("")} people={peopleModal === "Followers" ? socialGraph.followers : socialGraph.following} loading={peopleLoading} currentUser={cloudUserId} onCreator={(person) => { setPeopleModal(""); openPublicCreator(person); }} onFollow={toggleSocialPerson} />'
 );
 
-const sheetAnchor = 'function SheetHeader({ title, close }) {';
-if (!code.includes(sheetAnchor)) throw new Error('Social graph patch failed: SheetHeader anchor not found');
+const supportAnchor = 'function SupportItem';
+if (!code.includes(supportAnchor)) throw new Error('Social graph patch failed: SupportItem anchor not found');
 const peopleComponent = `function SocialPeopleModal({ visible, title, close, people, loading, currentUser, onCreator, onFollow }) {
   const rows = Array.isArray(people) ? people : [];
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}><View style={styles.modalBg}><View style={[styles.sheet, { maxHeight: "78%" }]}><SheetHeader title={title} close={close} /><ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
@@ -107,7 +107,7 @@ const peopleComponent = `function SocialPeopleModal({ visible, title, close, peo
 }
 
 `;
-code = code.replace(sheetAnchor, peopleComponent + sheetAnchor);
+code = code.replace(supportAnchor, peopleComponent + supportAnchor);
 
 fs.writeFileSync(path, code, 'utf8');
 console.log('Earnzo social graph applied: real followers/following counts, cloud lists, creator opening and follow toggles.');
