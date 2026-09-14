@@ -144,6 +144,9 @@ jobs:
       - name: Apply simplified home navigation
         run: node scripts/patch-home-navigation-simplify.js
 
+      - name: Apply final clean Home and photo viewer
+        run: node scripts/patch-final-home-photo.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
