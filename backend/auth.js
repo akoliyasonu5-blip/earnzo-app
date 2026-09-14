@@ -23,6 +23,19 @@ function ensureConfigured() {
   if (!authConfigured) throw new Error('Secure login is not configured in this build.');
 }
 
+function getOAuthParam(url, key) {
+  try {
+    const parsed = new URL(String(url || ''));
+    const fromQuery = parsed.searchParams.get(key);
+    if (fromQuery) return fromQuery;
+    const hash = String(parsed.hash || '').replace(/^#/, '');
+    if (!hash) return null;
+    return new URLSearchParams(hash).get(key);
+  } catch (_) {
+    return null;
+  }
+}
+
 export async function getAuthSession() {
   if (!authConfigured) return null;
   const { data, error } = await supabaseAuth.auth.getSession();
@@ -61,16 +74,41 @@ export async function verifyPhoneOtp(phone, token) {
 export async function signInGoogle() {
   ensureConfigured();
   const redirectTo = 'earnzo://google-auth';
-  const { data, error } = await supabaseAuth.auth.signInWithOAuth({ provider: 'google', options: { redirectTo, skipBrowserRedirect: true, queryParams: { prompt: 'select_account' } } });
+  const { data, error } = await supabaseAuth.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo,
+      skipBrowserRedirect: true,
+      queryParams: { prompt: 'select_account' },
+    },
+  });
   if (error) throw error;
   if (!data?.url) throw new Error('Google login URL was not returned.');
+
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo, { showInRecents: true });
   if (!result || result.type !== 'success' || !result.url) throw new Error('Google login was cancelled.');
-  const code = new URL(result.url).searchParams.get('code');
-  if (!code) throw new Error('Google login did not return an authorization code.');
-  const sessionResult = await supabaseAuth.auth.exchangeCodeForSession(code);
-  if (sessionResult.error) throw sessionResult.error;
-  return sessionResult.data;
+
+  const oauthError = getOAuthParam(result.url, 'error_description') || getOAuthParam(result.url, 'error');
+  if (oauthError) throw new Error(decodeURIComponent(String(oauthError).replace(/\+/g, ' ')));
+
+  const code = getOAuthParam(result.url, 'code');
+  if (code) {
+    const sessionResult = await supabaseAuth.auth.exchangeCodeForSession(code);
+    if (sessionResult.error) throw sessionResult.error;
+    return sessionResult.data;
+  }
+
+  // Some mobile OAuth redirects return a token pair in the URL fragment instead of a PKCE code.
+  // Support that form as a safe fallback so Android browser/deep-link differences do not break login.
+  const accessToken = getOAuthParam(result.url, 'access_token');
+  const refreshToken = getOAuthParam(result.url, 'refresh_token');
+  if (accessToken && refreshToken) {
+    const sessionResult = await supabaseAuth.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    if (sessionResult.error) throw sessionResult.error;
+    return sessionResult.data;
+  }
+
+  throw new Error('Google login callback mila, lekin session code/token nahi mila. Please try again.');
 }
 
 export async function changeAuthPassword(newPassword) {
