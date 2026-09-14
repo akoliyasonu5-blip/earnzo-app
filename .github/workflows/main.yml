@@ -153,6 +153,9 @@ jobs:
       - name: Apply Play Store compliance links
         run: node scripts/patch-play-compliance.js
 
+      - name: Apply final QA fixes
+        run: node scripts/patch-final-qa-fixes.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
