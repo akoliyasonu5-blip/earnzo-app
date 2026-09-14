@@ -1,0 +1,173 @@
+name: Build Earnzo QA Auth APK
+
+on:
+  push:
+    branches:
+      - qa-auth
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_PUBLIC_EARNZO_API_URL: https://earnzo-backend.onrender.com
+      EXPO_PUBLIC_SUPABASE_URL: https://zingvsvbqboajvsphzqt.supabase.co
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_t_jUp4-ENsAUl0ljivz3yg_AVMYwOKY
+      EXPO_PUBLIC_ENABLE_TEST_LOGIN: "true"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Earnzo brand assets
+        run: node scripts/generate-brand-assets.js
+
+      - name: Apply Home feed fixes
+        run: node scripts/patch-home-feed.js
+
+      - name: Apply editor upgrades
+        run: node scripts/patch-editor.js
+
+      - name: Apply trim upgrade
+        run: node scripts/patch-trim-range.js
+
+      - name: Apply filters and effects upgrade
+        run: node scripts/patch-filters-effects.js
+
+      - name: Apply audio controls upgrade
+        run: node scripts/patch-audio-controls.js
+
+      - name: Apply crop framing upgrade
+        run: node scripts/patch-crop-framing.js
+
+      - name: Apply backend foundation
+        run: node scripts/patch-backend-foundation.js
+
+      - name: Apply cloud feed sync
+        run: node scripts/patch-cloud-feed-sync.js
+
+      - name: Apply social cloud sync
+        run: node scripts/patch-social-cloud-sync.js
+
+      - name: Apply cloud search and profile sync
+        run: node scripts/patch-search-profiles.js
+
+      - name: Apply photo and story fixes
+        run: node scripts/patch-photo-story-fixes.js
+
+      - name: Apply pull to refresh
+        run: node scripts/patch-pull-refresh.js
+
+      - name: Apply creator profiles
+        run: node scripts/patch-creator-profile.js
+
+      - name: Apply saved content
+        run: node scripts/patch-saved-content.js
+
+      - name: Apply creator post management
+        run: node scripts/patch-own-content-management.js
+
+      - name: Apply priority experience
+        run: node scripts/patch-priority-experience.js
+
+      - name: Apply global language and region
+        run: node scripts/patch-global-language-region-v2.js
+
+      - name: Apply creator stats and valid views
+        run: node scripts/patch-creator-stats-views.js
+
+      - name: Apply monetization application flow
+        run: node scripts/patch-monetization-application.js
+
+      - name: Apply detailed notification center
+        run: node scripts/patch-notification-center.js
+
+      - name: Apply creator wallet and payout flow
+        run: node scripts/patch-wallet-payout-flow.js
+
+      - name: Apply creator drafts
+        run: node scripts/patch-creator-drafts.js
+
+      - name: Apply moderation and safety
+        run: node scripts/patch-moderation-safety.js
+
+      - name: Apply cloud messaging
+        run: node scripts/patch-cloud-messaging.js
+
+      - name: Apply creator analytics
+        run: node scripts/patch-creator-analytics.js
+
+      - name: Apply social graph
+        run: node scripts/patch-social-graph.js
+
+      - name: Fix comment keyboard composer
+        run: node scripts/patch-comment-keyboard.js
+
+      - name: Apply secure login options
+        run: node scripts/patch-secure-auth-options.js
+
+      - name: Apply auth provider fallback
+        run: node scripts/patch-auth-provider-fallback.js
+
+      - name: Apply voice and video calls
+        run: node scripts/patch-voice-video-calls.js
+
+      - name: Apply Earnzo brand logo
+        run: node scripts/patch-brand-logo.js
+
+      - name: Apply upload duration and size rules
+        run: node scripts/patch-upload-rules.js
+
+      - name: Apply real upload progress
+        run: node scripts/patch-real-upload-progress.js
+
+      - name: Apply social polish and security
+        run: node scripts/patch-social-polish-security.js
+
+      - name: Apply profile community experience
+        run: node scripts/patch-profile-community-experience.js
+
+      - name: Apply simplified home navigation
+        run: node scripts/patch-home-navigation-simplify.js
+
+      - name: Apply final clean Home and photo viewer
+        run: node scripts/patch-final-home-photo.js
+
+      - name: Apply final product v2
+        run: node scripts/patch-final-product-v2.js
+
+      - name: Apply Play Store compliance links
+        run: node scripts/patch-play-compliance.js
+
+      - name: Apply final QA fixes
+        run: node scripts/patch-final-qa-fixes.js
+
+      - name: Create Android project
+        run: npx expo prebuild --platform android --non-interactive
+
+      - name: Build QA APK
+        env:
+          NODE_ENV: production
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Upload QA APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Earnzo-QA-Auth-APK
+          path: android/app/build/outputs/apk/release/app-release.apk
