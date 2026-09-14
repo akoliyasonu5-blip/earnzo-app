@@ -17,14 +17,15 @@ function replaceFunction(name, replacement) {
   code = code.slice(0, start) + replacement + '\n' + code.slice(end + (code.startsWith('\nfunction ', end) ? 1 : 0));
 }
 
-// Home is a clean discovery feed. Upload categories are metadata only and are selected while publishing.
+// Home is a clean discovery feed. Content-type/category chips are removed from Home,
+// while the useful For You / Following switch remains available.
 code = code.replace(/\s*if \(category !== "All"\) visible = visible\.filter\(\(p\) => p\.category === category\);/g, '');
 code = code.replace(/<ScrollView horizontal showsHorizontalScrollIndicator=\{false\} style=\{\{ marginTop: 12 \}\}>\{\["All", "Music", "Comedy", "Tech", "Travel", "Fitness"\]\.map\([\s\S]*?<\/ScrollView>/g, '');
 code = code.replace(/<ScrollView horizontal showsHorizontalScrollIndicator=\{false\} style=\{\{ marginTop: 4 \}\}>\{\["Long Videos", "Short Videos", "Photos", "All"\]\.map\([\s\S]*?<\/ScrollView>/g, '');
-code = code.replace(/<View style=\{styles\.feedTabs\}>\{\["For You", "Following"\]\.map\([\s\S]*?<\/View>/g, '');
 
-// Route short-form content only to Shorts. Home automatically shows long-form/video/photo/text feed without labels.
-code = code.replace(/let visible = posts;[\s\S]*?const update =/, 'let visible = posts.filter((p) => p.mediaType !== "short");\n  const update =');
+// Route short-form content only to Shorts. Home shows long-form/video/photo/text feed.
+// For You shows the full Home feed; Following narrows it to followed creators.
+code = code.replace(/let visible = posts;[\s\S]*?const update =/, 'let visible = posts.filter((p) => p.mediaType !== "short"); if (feed === "Following") visible = visible.filter((p) => p.following);\n  const update =');
 
 // Give creators a richer category selector only during upload.
 code = code.replace(
@@ -101,4 +102,4 @@ replaceFunction('PhotoFeedMedia', `function PhotoFeedMedia({ post }) {
 }`);
 
 fs.writeFileSync(path, code, 'utf8');
-console.log('Earnzo clean discovery navigation applied: no Home filter chips, automatic short routing, working Search, branded Creator Hub, full-view tappable photos.');
+console.log('Earnzo discovery navigation applied: Home content chips removed, For You/Following kept, Shorts routed separately, Search working, branded Creator Hub, full-view tappable photos.');

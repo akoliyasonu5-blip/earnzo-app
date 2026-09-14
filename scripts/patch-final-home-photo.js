@@ -35,14 +35,14 @@ function removeAround(source, marker, openTag, closeTag) {
   return out;
 }
 
-// Final Home cleanup: remove all old filter rows from Home only.
+// Final Home cleanup: remove content-type/category filter rows only.
+// Keep the useful For You / Following switch directly below Creator Stories.
 {
   const { start, end } = range('Home');
   let home = code.slice(start, end);
   home = removeAround(home, '["Long Videos", "Short Videos", "Photos", "All"]', '<ScrollView', '</ScrollView>');
-  home = removeAround(home, '["For You", "Following"]', '<View style={styles.feedTabs}', '</View>');
   home = removeAround(home, '["All", "Music", "Comedy", "Tech", "Travel", "Fitness"]', '<ScrollView', '</ScrollView>');
-  home = home.replace(/let visible = posts;[\s\S]*?const update =/, 'let visible = posts.filter((p) => p.mediaType !== "short");\n  const update =');
+  home = home.replace(/let visible = posts;[\s\S]*?const update =/, 'let visible = posts.filter((p) => p.mediaType !== "short"); if (feed === "Following") visible = visible.filter((p) => p.following);\n  const update =');
   code = code.slice(0, start) + home + code.slice(end);
 }
 
@@ -92,13 +92,13 @@ function PhotoFeedMedia({ post }) {
   </>;
 }`);
 
-// Stop the build if old Home filter controls survive.
+// Stop the build if old Home content-filter controls survive.
 {
   const { start, end } = range('Home');
   const home = code.slice(start, end);
   if (home.includes('["Long Videos", "Short Videos", "Photos", "All"]')) throw new Error('Old content filter row still present');
-  if (home.includes('["For You", "Following"]')) throw new Error('Old feed filter row still present');
+  if (home.includes('["All", "Music", "Comedy", "Tech", "Travel", "Fitness"]')) throw new Error('Old category filter row still present');
 }
 
 fs.writeFileSync(path, code, 'utf8');
-console.log('Final Home cleanup and full tappable photo view applied.');
+console.log('Final Home cleanup applied: content chips removed, For You/Following kept, full tappable photo view active.');
