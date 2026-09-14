@@ -1,5 +1,6 @@
 name: Build Earnzo QA Auth APK
 
+# QA-only build: test auth fallback enabled. Never use this APK/AAB for Play production.
 on:
   push:
     branches:
