@@ -29,7 +29,9 @@ function uploadMediaWithProgress(uri, kind, start, end, onProgress) {
     xhr.onload = () => {
       const body = parseBody(xhr.responseText || "");
       if (xhr.status >= 200 && xhr.status < 300) { onProgress?.(end); resolve(body); }
-      else reject(new Error(body?.error || body?.message || `Media upload failed (${xhr.status})`));
+      else if (xhr.status === 413 || /file.*(size|large)|too large|limit/i.test(String(body?.error || body?.message || body || ""))) {
+        reject(new Error("Storage ne file-size limit ki wajah se upload reject kiya. Earnzo app maximum 2 GB allow karta hai, lekin connected cloud storage ka plan/bucket limit bhi kam nahi hona chahiye."));
+      } else reject(new Error(body?.error || body?.message || `Media upload failed (${xhr.status})`));
     };
     xhr.onerror = () => reject(new Error("Media upload network error"));
     xhr.ontimeout = () => reject(new Error("Media upload timed out"));
