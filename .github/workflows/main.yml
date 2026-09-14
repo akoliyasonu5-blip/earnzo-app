@@ -147,6 +147,9 @@ jobs:
       - name: Apply final clean Home and photo viewer
         run: node scripts/patch-final-home-photo.js
 
+      - name: Apply final product v2
+        run: node scripts/patch-final-product-v2.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
