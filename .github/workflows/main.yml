@@ -1,4 +1,4 @@
-name: Build Earnzo APK
+name: Build Earnzo Production APK + AAB
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ jobs:
       EXPO_PUBLIC_EARNZO_API_URL: https://earnzo-backend.onrender.com
       EXPO_PUBLIC_SUPABASE_URL: https://zingvsvbqboajvsphzqt.supabase.co
       EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_t_jUp4-ENsAUl0ljivz3yg_AVMYwOKY
-      EXPO_PUBLIC_ENABLE_TEST_LOGIN: "true"
+      EXPO_PUBLIC_ENABLE_TEST_LOGIN: "false"
 
     steps:
       - name: Checkout code
@@ -120,7 +120,7 @@ jobs:
       - name: Apply secure login options
         run: node scripts/patch-secure-auth-options.js
 
-      - name: Apply auth provider fallback for testing
+      - name: Apply auth provider fallback
         run: node scripts/patch-auth-provider-fallback.js
 
       - name: Apply voice and video calls
@@ -153,16 +153,22 @@ jobs:
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
-      - name: Build Release APK
+      - name: Build Production APK and AAB
         env:
           NODE_ENV: production
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease bundleRelease
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Earnzo-Release-APK
+          name: Earnzo-Production-APK
           path: android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: Earnzo-Production-AAB
+          path: android/app/build/outputs/bundle/release/app-release.aab
