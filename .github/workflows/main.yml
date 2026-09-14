@@ -150,6 +150,9 @@ jobs:
       - name: Apply final product v2
         run: node scripts/patch-final-product-v2.js
 
+      - name: Apply Play Store compliance links
+        run: node scripts/patch-play-compliance.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
