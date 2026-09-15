@@ -47,5 +47,12 @@ code = code.slice(0, start) + block + code.slice(end);
 if (!code.includes('https://earnzo-backend.onrender.com/privacy')) throw new Error('Privacy link missing after Play compliance patch');
 if (!code.includes('https://earnzo-backend.onrender.com/account-deletion')) throw new Error('Account deletion link missing after Play compliance patch');
 
+// Google-only authentication UI: keep alternate auth helpers internally for compatibility,
+// but expose only the working Google sign-in option to users.
+const oldLoginOptions = '<Text style={styles.authSub}>Login with Google, email or phone number</Text><Pressable style={styles.primary} disabled={authBusy} onPress={doGoogleLogin}><Text style={styles.primaryText}>{authBusy ? "Please wait..." : "G  Continue with Google"}</Text></Pressable><Pressable style={styles.secondary} onPress={() => setStage("emailAuth")}><Text style={styles.secondaryText}>✉  Gmail / Zoho Mail</Text></Pressable><Pressable style={styles.secondary} onPress={() => { setAuthMode("login"); setStage("phone"); }}><Text style={styles.secondaryText}>📱  Phone Number</Text></Pressable><Text style={styles.note}>{authConfigured ? "Secure login powered by Supabase Auth" : "Secure login configuration missing in this build"}</Text>';
+const googleOnlyLogin = '<Text style={styles.authSub}>Continue with Google to sign in</Text><Pressable style={styles.primary} disabled={authBusy} onPress={doGoogleLogin}><Text style={styles.primaryText}>{authBusy ? "Please wait..." : "G  Continue with Google"}</Text></Pressable><Text style={styles.note}>{authConfigured ? "Secure Google sign-in powered by Supabase Auth" : "Secure login configuration missing in this build"}</Text>';
+if (!code.includes(oldLoginOptions)) throw new Error('Google-only auth patch failed: login options not found');
+code = code.replace(oldLoginOptions, googleOnlyLogin);
+
 fs.writeFileSync(path, code, 'utf8');
-console.log('Earnzo Play compliance links applied: Privacy Policy + permanent Account/Data Deletion request available in Settings.');
+console.log('Earnzo Play compliance links + Google-only login applied.');
