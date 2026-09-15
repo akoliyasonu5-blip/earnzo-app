@@ -159,6 +159,9 @@ jobs:
       - name: Apply discovery search and monetization rules
         run: node scripts/patch-discovery-monetization.js
 
+      - name: Show signed-in account details in security
+        run: node scripts/patch-account-security-profile.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
