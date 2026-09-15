@@ -156,6 +156,9 @@ jobs:
       - name: Apply final QA fixes
         run: node scripts/patch-final-qa-fixes.js
 
+      - name: Apply discovery search and monetization rules
+        run: node scripts/patch-discovery-monetization.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
