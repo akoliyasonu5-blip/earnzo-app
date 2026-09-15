@@ -165,6 +165,9 @@ jobs:
       - name: Apply Google account recovery experience
         run: node scripts/patch-google-account-recovery.js
 
+      - name: Apply global discovery search v2
+        run: node scripts/patch-global-search-v2.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
