@@ -162,6 +162,9 @@ jobs:
       - name: Show signed-in account details in security
         run: node scripts/patch-account-security-profile.js
 
+      - name: Apply Google account recovery experience
+        run: node scripts/patch-google-account-recovery.js
+
       - name: Create Android project
         run: npx expo prebuild --platform android --non-interactive
 
