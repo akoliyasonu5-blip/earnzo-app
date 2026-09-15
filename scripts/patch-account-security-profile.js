@@ -15,7 +15,7 @@ function must(label, ok) {
 // Make the persisted Supabase session available so Google email/phone details survive app restarts.
 code = code.replace(/import \{([^}]*)\} from "\.\/backend\/auth";/, (m, inner) => {
   if (inner.includes('getAuthSession')) return m;
-  return `import {${inner.trim()}, getAuthSession } from "./backend/auth";`;
+  return `import { ${inner.trim().replace(/^\s+|\s+$/g, '')}, getAuthSession } from "./backend/auth";`;
 });
 must('getAuthSession import missing', code.includes('getAuthSession'));
 
@@ -45,19 +45,28 @@ const sessionSync = `  useEffect(() => {
 `;
 code = code.replace(loadingAnchor, sessionSync + loadingAnchor);
 
-const settingsCallAnchor = '<AccountSettings userId={cloudUserId} openSupport={() => { setSettingsOpen(false); setSupportOpen(true); }} visible={settingsOpen}';
-must('AccountSettings call anchor missing', code.includes(settingsCallAnchor));
-code = code.replace(settingsCallAnchor, '<AccountSettings accountEmail={signedInEmail} accountPhone={signedInPhone} userId={cloudUserId} openSupport={() => { setSettingsOpen(false); setSupportOpen(true); }} visible={settingsOpen}');
+// Final UI patches may reorder AccountSettings props, so inject identity props into the first mount generically.
+const accountMount = /<AccountSettings\s+/;
+must('AccountSettings mount missing', accountMount.test(code));
+if (!code.includes('<AccountSettings accountEmail={signedInEmail}')) {
+  code = code.replace(accountMount, '<AccountSettings accountEmail={signedInEmail} accountPhone={signedInPhone} ');
+}
 
-const settingsSignature = 'function AccountSettings({ visible, close, name, username, setName, setUsername, lastNameChangeAt, setLastNameChangeAt, deactivate, logout, blockedCreators = [], onUnblock, userId, openSupport }) {';
-must('AccountSettings signature missing', code.includes(settingsSignature));
-code = code.replace(settingsSignature, 'function AccountSettings({ visible, close, name, username, setName, setUsername, lastNameChangeAt, setLastNameChangeAt, deactivate, logout, blockedCreators = [], onUnblock, userId, openSupport, accountEmail = "", accountPhone = "" }) {');
+// Final UI patches may add props to AccountSettings, so append ours to the destructured signature generically.
+const signatureRegex = /function AccountSettings\(\{([^}]*)\}\) \{/;
+const signatureMatch = code.match(signatureRegex);
+must('AccountSettings signature missing', !!signatureMatch);
+if (!signatureMatch[1].includes('accountEmail')) {
+  const inner = signatureMatch[1].trim().replace(/,\s*$/, '');
+  code = code.replace(signatureRegex, `function AccountSettings({ ${inner}, accountEmail = "", accountPhone = "" }) {`);
+}
 
 const recoveryState = "const [recoveryEmail, setRecoveryEmail] = useState('');";
-must('recovery email state missing', code.includes(recoveryState));
-code = code.replace(recoveryState, "const [recoveryEmail, setRecoveryEmail] = useState(accountEmail || '');");
+if (code.includes(recoveryState)) {
+  code = code.replace(recoveryState, "const [recoveryEmail, setRecoveryEmail] = useState(accountEmail || '');");
+}
 
-const remainingAnchor = '  const remaining = daysRemaining(lastNameChangeAt, NAME_COOLDOWN_DAYS); const safeTop = Platform.OS === \'android\' ? (StatusBar.currentHeight || 0) : 0;';
+const remainingAnchor = "  const remaining = daysRemaining(lastNameChangeAt, NAME_COOLDOWN_DAYS); const safeTop = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;";
 must('AccountSettings remaining anchor missing', code.includes(remainingAnchor));
 code = code.replace(remainingAnchor, `  useEffect(() => { if (securityOpen && accountEmail && !recoveryEmail) setRecoveryEmail(accountEmail); }, [securityOpen, accountEmail, recoveryEmail]);
 ${remainingAnchor}`);
