@@ -39,8 +39,8 @@ code = code
     <Text style={styles.monetizationSmall}>CREATOR MONETIZATION</Text>
     <Text style={styles.monetizationTitle}>Earnzo Creator Program</Text>
     <Text style={styles.monetizationSub}>10K followers + 10 lakh valid views last 90 days me complete karne ke baad apply option unlock hoga.</Text>
-    <Progress title="Followers" value={\`${fmt(followers)} / 10K\`} percent={pct(followers, FOLLOWER_TARGET)} />
-    <Progress title="Valid Views • Last 90 days" value={\`${fmt(views)} / 1M\`} percent={pct(views, VIEW_TARGET)} />
+    <Progress title="Followers" value={fmt(followers) + " / 10K"} percent={pct(followers, FOLLOWER_TARGET)} />
+    <Progress title="Valid Views • Last 90 days" value={fmt(views) + " / 1M"} percent={pct(views, VIEW_TARGET)} />
     <Pressable style={[styles.applyButton, !eligible && styles.locked]} onPress={() => Alert.alert(eligible ? "Eligible ✅" : "Not eligible yet", eligible ? "KYC aur policy review complete karke monetization application submit kare." : "10K followers aur 10 lakh valid views last 90 days me complete kare.")}>
       <Text style={styles.primaryText}>{eligible ? "Apply for Monetization" : "Monetization Locked"}</Text>
     </Pressable>
@@ -76,7 +76,7 @@ if (code.includes(oldSearchMount)) {
   ];
   const sounds = ["Earnzo Beat", "Village Vibes", "Creator Pop", "Travel Mood", "Krishna Flute", "Nature Love"];
   const term = String(value || "").trim().toLowerCase();
-  const topicMatches = term ? topics.filter((x) => `${x[1]} ${x[2]}`.toLowerCase().includes(term)).slice(0, 8) : topics.slice(0, 10);
+  const topicMatches = term ? topics.filter((x) => (String(x[1]) + " " + String(x[2])).toLowerCase().includes(term)).slice(0, 8) : topics.slice(0, 10);
   const soundMatches = term ? sounds.filter((x) => x.toLowerCase().includes(term)).slice(0, 6) : sounds.slice(0, 6);
   const pickQuery = (q) => { setValue(q); onSearch?.(q); };
 
@@ -112,7 +112,7 @@ if (code.includes(oldSearchMount)) {
         </View> : null}
 
         {soundMatches.length ? <Text style={{ fontSize: 17, fontWeight: "900", marginTop: 10, marginBottom: 8 }}>{term ? "Sound ideas" : "Trending Sounds"}</Text> : null}
-        {soundMatches.map((s) => <Pressable key={s} onPress={() => Alert.alert("Sound idea", `${s} Creator Library suggestion hai. Create > Add Sound me sound options open kare. Commercial songs ke liye licensed music catalog connect karna hoga.`)} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#F0F0F3" }}>
+        {soundMatches.map((s) => <Pressable key={s} onPress={() => Alert.alert("Sound idea", String(s) + " Creator Library suggestion hai. Create > Add Sound me sound options open kare. Commercial songs ke liye licensed music catalog connect karna hoga.")} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#F0F0F3" }}>
           <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#F0EDFF", alignItems: "center", justifyContent: "center", marginRight: 10 }}><Text style={{ fontSize: 20 }}>♫</Text></View>
           <View style={{ flex: 1 }}><Text style={{ fontWeight: "900", color: "#171722" }}>{s}</Text><Text style={{ color: "#747789", marginTop: 2 }}>Creator sound idea • Add Sound</Text></View>
           <Text style={{ color: "#6C4CF1", fontWeight: "900" }}>›</Text>
@@ -123,7 +123,7 @@ if (code.includes(oldSearchMount)) {
         {profiles.length > 0 ? <Text style={{ fontSize: 17, fontWeight: "900", marginTop: 18, marginBottom: 8 }}>Creators</Text> : null}
         {profiles.map((p, i) => <View key={String(p.id || p.username || i)} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#F0F0F3" }}>
           <View style={{ width: 44, height: 44, borderRadius: 22, overflow: "hidden", backgroundColor: "#F0EDFF", alignItems: "center", justifyContent: "center", marginRight: 10 }}>{p.profilePhoto ? <Image source={{ uri: p.profilePhoto }} style={styles.fill} /> : <Text style={{ fontWeight: "900", color: "#6C4CF1" }}>{String(p.name || p.username || "E")[0].toUpperCase()}</Text>}</View>
-          <View style={{ flex: 1 }}><Text style={{ fontWeight: "900", fontSize: 15 }}>{p.name || "Creator"}</Text><Text style={{ color: "#747789", marginTop: 2 }}>{p.username ? `@${p.username}` : (p.handle || "")}</Text></View>
+          <View style={{ flex: 1 }}><Text style={{ fontWeight: "900", fontSize: 15 }}>{p.name || "Creator"}</Text><Text style={{ color: "#747789", marginTop: 2 }}>{p.username ? "@" + p.username : (p.handle || "")}</Text></View>
         </View>)}
 
         {posts.length > 0 ? <Text style={{ fontSize: 17, fontWeight: "900", marginTop: 18, marginBottom: 8 }}>Videos & Posts</Text> : null}
