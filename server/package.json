@@ -4,7 +4,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "start": "node patch-upload-limit.js && node index-durable.js"
+    "start": "node patch-upload-limit.js && node patch-stats-route.js && node index-durable.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
