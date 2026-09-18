@@ -41,14 +41,37 @@ if (code.includes(resultBlock)) {
 }
 
 // Pass all visible feed posts into search so search is useful even before cloud data grows.
-const searchMountNeedle = '<SearchModal visible={searchOpen} close={() => setSearchOpen(false)} value={searchText} setValue={setSearchText} loading={searchLoading} results={searchResults} onSearch={runCloudSearch} openPost={() => { setSearchOpen(false); setTab("Home"); }} openCreate={() => { setSearchOpen(false); setTab("Create"); }} />';
-must('SearchModal mount missing', code.includes(searchMountNeedle));
-code = code.replace(searchMountNeedle, '<SearchModal visible={searchOpen} close={() => setSearchOpen(false)} value={searchText} setValue={setSearchText} loading={searchLoading} results={searchResults} localPosts={posts} onSearch={runCloudSearch} openPost={() => { setSearchOpen(false); setTab("Home"); }} openCreate={(topic) => { setCreateSeedTopic(String(topic || searchText || "").trim()); setSearchOpen(false); setTab("Create"); }} />');
+{
+  const mountStart = code.indexOf('<SearchModal visible={searchOpen}');
+  must('SearchModal mount missing', mountStart >= 0);
+  const mountEnd = code.indexOf(' /></SafeAreaView>;', mountStart);
+  must('SearchModal mount end missing', mountEnd >= 0);
+  let mount = code.slice(mountStart, mountEnd + 3);
+  if (!mount.includes('localPosts={posts}')) {
+    mount = mount.replace('results={searchResults}', 'results={searchResults} localPosts={posts}');
+  }
+  const oldOpenCreate = 'openCreate={() => { setSearchOpen(false); setTab("Create"); }}';
+  const newOpenCreate = 'openCreate={(topic) => { setCreateSeedTopic(String(topic || searchText || "").trim()); setSearchOpen(false); setTab("Create"); }}';
+  if (mount.includes(oldOpenCreate)) {
+    mount = mount.replace(oldOpenCreate, newOpenCreate);
+  } else if (!mount.includes('openCreate={')) {
+    mount = mount.replace(/\s*\/>$/, ' ' + newOpenCreate + ' />');
+  }
+  code = code.slice(0, mountStart) + mount + code.slice(mountEnd + 3);
+}
 
 // Feed the selected topic into Create.
-const createCall = '<Create name={name} username={username} setPosts={setPosts} setCreatedPosts={setCreatedPosts} goHome={() => setTab("Home")} goShorts={() => setTab("Shorts")} />';
-must('Create call missing', code.includes(createCall));
-code = code.replace(createCall, '<Create name={name} username={username} setPosts={setPosts} setCreatedPosts={setCreatedPosts} goHome={() => setTab("Home")} goShorts={() => setTab("Shorts")} initialTopic={createSeedTopic} clearInitialTopic={() => setCreateSeedTopic("")} />');
+{
+  const createLineStart = code.indexOf('if (tab === "Create") page = <Create');
+  must('Create call missing', createLineStart >= 0);
+  const createLineEnd = code.indexOf(';', createLineStart);
+  must('Create call end missing', createLineEnd >= 0);
+  let createLine = code.slice(createLineStart, createLineEnd);
+  if (!createLine.includes('initialTopic={createSeedTopic}')) {
+    createLine = createLine.replace(/\s*\/>$/, ' initialTopic={createSeedTopic} clearInitialTopic={() => setCreateSeedTopic("")} />');
+  }
+  code = code.slice(0, createLineStart) + createLine + code.slice(createLineEnd);
+}
 
 // Add the props to the Create signature without depending on other future props.
 const createSig = /function Create\(\{([^}]*)\}\) \{/;
