@@ -96,7 +96,7 @@ const replacement = `function AccountSettings({ visible, close, name, username, 
         },
       });
       setRecoveryMessage('');
-      Alert.alert('Recovery request sent ✅', 'Ticket ID: ' + t.id + '\nEarnzo team ke paas account details automatically chali gayi hain.');
+      Alert.alert('Recovery request sent ✅', 'Ticket ID: ' + t.id + ' • Earnzo team ke paas account details automatically chali gayi hain.');
     } catch (e) {
       Alert.alert('Request send nahi hui', String(e?.message || e || 'Please try again'));
     } finally { setBusy(false); }
